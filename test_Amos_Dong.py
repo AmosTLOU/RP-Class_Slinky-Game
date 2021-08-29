@@ -60,13 +60,13 @@ class Player(pg.sprite.Sprite):
 
     def getNewRect(self, coord_bottom):   
         if self.dir == 0:
-            bias_x, bias_y = -20, -64
+            bias_x, bias_y = -14, -47
         elif self.dir == 1:
-            bias_x, bias_y = -64, -64
+            bias_x, bias_y = -47, -50
         elif self.dir == 2:
-            bias_x, bias_y = -64, -20
+            bias_x, bias_y = -50, -17
         elif self.dir == 3:
-            bias_x, bias_y = 0, 0
+            bias_x, bias_y = -17, -14
         return pg.Rect(coord_bottom[0]+bias_x, coord_bottom[1]+bias_y, SizePlayerImage[0], SizePlayerImage[1])
 
     # def platformDirection(self, box): # 0 horizontal   1 vertical
