@@ -7,7 +7,6 @@ import pygame as pg
 if not pg.image.get_extended():
     raise SystemExit("Sorry, extended image module required")
 
-# SCREENRECT = pg.Rect(0, 0, 640, 480)
 SCREENRECT = pg.Rect(0, 0, 1200, 480)
 Size_MarkPoint = 10
 SizePlayerImage = [64, 64]
@@ -46,22 +45,29 @@ class Player(pg.sprite.Sprite):
 
     images = []  # class static variable!
 
-    def __init__(self):   # instance variable!
+    def __init__(self, left, top, w, h):   # instance variable!
         pg.sprite.Sprite.__init__(self, self.containers)
         self.dir = 0  # 0 upwards    1 to left    2 downwards    3 to right
         self.image = self.assignImage(self.images[0])
         # self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
-        self.rect = pg.Rect(260, 250, 64, 64)
+        self.rect = pg.Rect(left, top, w, h)
         self.point_bottom = [self.rect[0]+20, self.rect[1]+64]
         self.point_top = self.point_bottom[:]
         self.pos_markPoint = self.point_bottom[:]
+        self.beingHold = False
+    
+    def unholdStatus(self):
+        self.image = self.assignImage(self.images[0])
+        self.point_top = self.point_bottom[:]
+        self.pos_markPoint = self.point_bottom[:]
+        self.beingHold = False
 
     def assignImage(self, image):
         return pg.transform.rotate(image, self.dir * 90)
 
     def getNewRect(self, coord_bottom):   
         if self.dir == 0:
-            bias_x, bias_y = -14, -57
+            bias_x, bias_y = -14, -52
         elif self.dir == 1:
             bias_x, bias_y = -57, -50
         elif self.dir == 2:
@@ -70,36 +76,44 @@ class Player(pg.sprite.Sprite):
             bias_x, bias_y = -17, -14
         return pg.Rect(coord_bottom[0]+bias_x, coord_bottom[1]+bias_y, SizePlayerImage[0], SizePlayerImage[1])
 
-    def drag(self, coord_mouse):
-        dst_MouseToTop = e_dst(self.point_top, coord_mouse)
-        if dst_MouseToTop > 20:  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
+    def drag(self, coord_mouse): 
+        if e_dst(self.point_top, coord_mouse) > 20:  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
             return
+        if not self.beingHold:  # if it was the first mouse click on slinky and the mouse was in the range of any collider box, then do nothing
+            for p in instances_platform:
+                for box in p.boxes:
+                    if touched(coord_mouse, box):
+                        return
         x, y = coord_mouse[0] - self.point_bottom[0], self.point_bottom[1] - coord_mouse[1]
         relative_distance = abs(x) + abs(y)
         if relative_distance > 100:  # get the top-end back
+            self.beingHold = False
             self.point_top = self.point_bottom[:]
             self.image = self.assignImage(self.images[0])
             self.pos_markPoint = self.point_top[:]
             # TODO Apply the animation of slinky getting back
         else:
+            self.beingHold = True
             self.point_top = coord_mouse[:] 
             # TODO Apply the image according to (x, y)   which is the relative distance
-            self.image = self.assignImage(self.images[min(abs(x)//3, 11)])
+            measure = abs(x) if self.dir == 0 or self.dir == 2 else abs(y)
+            self.image = self.assignImage(self.images[min(measure//3, 11)])
             self.pos_markPoint = self.point_top[:]
             for p in instances_platform:
                 for i in range(len(p.boxes)):
                     if touched(self.point_top, p.boxes[i]):
+                        if e_dst(self.point_bottom, self.point_top) < 20:  # if landpoint too close to bottom, then don't move
+                            return
                         self.dir = p.dir_boxes[i]
                         self.land(self.point_top)
+                        return
         
     def land(self, coord_land):
         print("Slinky lands on a new point!")
         self.rect = self.getNewRect(coord_land)
         self.point_bottom = self.point_top[:]
-        # TODO Apply the animation of slinky getting back
-        
-
-        
+        self.unholdStatus()
+        # TODO Apply the animation of slinky getting back        
         
         
 
@@ -111,10 +125,29 @@ class Platform(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.boxes = []
         self.dir_boxes = []  # 0 upwards    1 to left    2 downwards    3 to right
-        # self.rect.move_ip(random.randrange(100, 400), random.randrange(100, 400))    
+        # self.rect.move_ip(random.randrange(100, 400), random.randrange(100, 400)) 
+
+    def setColliderBoxes(self, thickness):
+        l = self.rect[0]
+        t = self.rect[1]
+        w = self.rect[2]
+        h = self.rect[3]  
+        self.boxes.append([[l, t], [l+w, t+thickness]])
+        self.boxes.append([[l, t+h], [l+w, t+h+thickness]])
+        self.boxes.append([[l, t], [l+thickness, t+h]])
+        self.boxes.append([[l+w, t], [l+w+thickness, t+h]])
+        # # whole area:
+        # self.boxes.append([[l, t], [l+w, t+h]])  
+        self.dir_boxes = [0, 2, 1, 3]
+    
+    def setRect(self, left, top, w, h):
+        self.rect = pg.Rect(left, top, w, h)
+
+
 
 class MarkPoint(pg.sprite.Sprite):
     images = []
+
     def __init__(self, w, h):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
@@ -188,44 +221,23 @@ def main(winstyle=0):
     clock = pg.time.Clock()
 
     # initialize our starting sprites
-    player = Player()
+    player = Player(220, 220, SizePlayerImage[0], SizePlayerImage[1])
     markPoint = MarkPoint(Size_MarkPoint, Size_MarkPoint)
     
-    for _ in range(3):
+    num_p = 5
+    for _ in range(num_p):
         instances_platform.append(Platform()) 
-    w = 260
-    h = 70
+    # TODO set the pos manually
     thickness = 10
-
-    left_top = [180, 80]
-    index = 0
-    instances_platform[index].rect = pg.Rect(left_top[0], left_top[1], w, h)
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+w, left_top[1]+thickness]])
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]+h], [left_top[0]+w, left_top[1]+h+thickness]])
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+thickness, left_top[1]+h]])
-    instances_platform[index].boxes.append([[left_top[0]+w, left_top[1]], [left_top[0]+w+thickness, left_top[1]+h]])
-    instances_platform[index].dir_boxes = [0, 2, 1, 3]
-
-    left_top = [180, 300]
-    index = 1
-    instances_platform[index].rect = pg.Rect(left_top[0], left_top[1], w, h)
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+w, left_top[1]+thickness]])
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]+h], [left_top[0]+w, left_top[1]+h+thickness]])
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+thickness, left_top[1]+h]])
-    instances_platform[index].boxes.append([[left_top[0]+w, left_top[1]], [left_top[0]+w+thickness, left_top[1]+h]])
-    instances_platform[index].dir_boxes = [0, 2, 1, 3]
-    
-    left_top = [180, 100]
-    index = 2
-    w, h = h, w
-    instances_platform[2].image = instances_platform[2].images[1]
-    instances_platform[2].rect = pg.Rect(50, 100, 70, 260)
-    instances_platform[index].rect = pg.Rect(left_top[0], left_top[1], w, h)
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+w, left_top[1]+thickness]])
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]+h], [left_top[0]+w, left_top[1]+h+thickness]])
-    instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+thickness, left_top[1]+h]])
-    instances_platform[index].boxes.append([[left_top[0]+w, left_top[1]], [left_top[0]+w+thickness, left_top[1]+h]])
-    instances_platform[index].dir_boxes = [0, 2, 1, 3]
+    instances_platform[0].setRect(180, 80, 260, 70)
+    instances_platform[1].setRect(180, 270, 260, 70)
+    instances_platform[2].setRect(110, 80, 70, 260)
+    instances_platform[2].image = Platform.images[1]
+    instances_platform[3].setRect(500, 300, 260, 70)
+    instances_platform[4].setRect(820, 50, 70, 260)
+    instances_platform[4].image = Platform.images[1]
+    for i in range(num_p):
+        instances_platform[i].setColliderBoxes(thickness)
 
 
     # Run our main loop whilst the player is alive.
@@ -235,11 +247,10 @@ def main(winstyle=0):
         pg.event.get()
         mouse_1_hold = pg.mouse.get_pressed(3)[0]
         if mouse_1_hold:
-            coord_mouse = pg.mouse.get_pos()
-            # print("Mouse Postion right now is: ", coord_mouse)
-            player.drag(coord_mouse)
-            markPoint.rect = player.pos_markPoint
-            # player.rect = pg.Rect(coord_mouse[0], coord_mouse[1], 40, 50)
+            player.drag(pg.mouse.get_pos())
+        else:
+            player.unholdStatus()
+        markPoint.rect = player.pos_markPoint
 
         for event in pg.event.get():
             # if event.type == pg.MOUSEBUTTONDOWN:
@@ -285,7 +296,7 @@ def main(winstyle=0):
         pg.display.update(dirty)
 
         # cap the framerate at 40fps. Also called 40HZ or 40 times per second.
-        clock.tick(60)
+        clock.tick(40)
 
     if pg.mixer:
         pg.mixer.music.fadeout(1000)
