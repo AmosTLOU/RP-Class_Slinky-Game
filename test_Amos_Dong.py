@@ -24,6 +24,7 @@ def load_image(file):
         raise SystemExit('Could not load image "%s" %s' % (file, pg.get_error()))
     return surface.convert()
 
+
 def load_sound(file):
     if not pg.mixer:
         return None
@@ -35,14 +36,16 @@ def load_sound(file):
         print("Warning, unable to load, %s" % file)
     return None
 
+
 def e_dst(coord_a, coord_b):
     return math.sqrt((coord_a[0] - coord_b[0])**2 + (coord_a[1] - coord_b[1])**2)
+
 
 def touched(coord, box):
     return True if box[0][0] <= coord[0] and coord[0] <= box[1][0] and box[0][1] <= coord[1] and coord[1] <= box[1][1] else False 
 
-class Player(pg.sprite.Sprite):   
 
+class Player(pg.sprite.Sprite):   
     images = []  # class static variable!
 
     def __init__(self, left, top, w, h):   # instance variable!
@@ -119,6 +122,7 @@ class Player(pg.sprite.Sprite):
 
 class Platform(pg.sprite.Sprite):
     images = []
+
     def __init__(self):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
@@ -242,18 +246,16 @@ def main(winstyle=0):
 
     # Run our main loop whilst the player is alive.
     while player.alive():
-        # get mouse input
-        
-        pg.event.get()
-        mouse_1_hold = pg.mouse.get_pressed(3)[0]
-        if mouse_1_hold:
-            player.drag(pg.mouse.get_pos())
-        else:
-            player.unholdStatus()
-        markPoint.rect = player.pos_markPoint
-
         for event in pg.event.get():
-            # if event.type == pg.MOUSEBUTTONDOWN:
+            # get mouse input:
+            mouse_1_hold = pg.mouse.get_pressed(3)[0]
+            if mouse_1_hold:
+                player.drag(pg.mouse.get_pos())
+            else:
+                player.unholdStatus()
+            markPoint.rect = player.pos_markPoint
+
+            # get keys input:
             if event.type == pg.QUIT:
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
