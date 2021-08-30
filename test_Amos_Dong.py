@@ -9,6 +9,7 @@ if not pg.image.get_extended():
 
 # SCREENRECT = pg.Rect(0, 0, 640, 480)
 SCREENRECT = pg.Rect(0, 0, 1200, 480)
+Size_MarkPoint = 10
 SizePlayerImage = [64, 64]
 SCORE = 0
 
@@ -50,29 +51,24 @@ class Player(pg.sprite.Sprite):
         self.dir = 0  # 0 upwards    1 to left    2 downwards    3 to right
         self.image = self.assignImage(self.images[0])
         # self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
-        self.rect = pg.Rect(160, 250, 64, 64)
-        
+        self.rect = pg.Rect(260, 250, 64, 64)
         self.point_bottom = [self.rect[0]+20, self.rect[1]+64]
         self.point_top = self.point_bottom[:]
+        self.pos_markPoint = self.point_bottom[:]
 
     def assignImage(self, image):
         return pg.transform.rotate(image, self.dir * 90)
 
     def getNewRect(self, coord_bottom):   
         if self.dir == 0:
-            bias_x, bias_y = -14, -47
+            bias_x, bias_y = -14, -57
         elif self.dir == 1:
-            bias_x, bias_y = -47, -50
+            bias_x, bias_y = -57, -50
         elif self.dir == 2:
             bias_x, bias_y = -50, -17
         elif self.dir == 3:
             bias_x, bias_y = -17, -14
         return pg.Rect(coord_bottom[0]+bias_x, coord_bottom[1]+bias_y, SizePlayerImage[0], SizePlayerImage[1])
-
-    # def platformDirection(self, box): # 0 horizontal   1 vertical
-    #     tmp = [box[0][0] - box[1][0], box[0][1] - box[1][1]]
-    #     return 0 if abs(tmp[0]) > abs(tmp[1]) else 1
-        
 
     def drag(self, coord_mouse):
         dst_MouseToTop = e_dst(self.point_top, coord_mouse)
@@ -82,14 +78,14 @@ class Player(pg.sprite.Sprite):
         relative_distance = abs(x) + abs(y)
         if relative_distance > 100:  # get the top-end back
             self.point_top = self.point_bottom[:]
+            self.image = self.assignImage(self.images[0])
+            self.pos_markPoint = self.point_top[:]
             # TODO Apply the animation of slinky getting back
         else:
-            self.point_top = coord_mouse[:]
-            # self.trace.append(self.point_top[:])
-            # if len(self.trace) > 2:
-            #     self.trace.pop(0)
+            self.point_top = coord_mouse[:] 
             # TODO Apply the image according to (x, y)   which is the relative distance
             self.image = self.assignImage(self.images[min(abs(x)//3, 11)])
+            self.pos_markPoint = self.point_top[:]
             for p in instances_platform:
                 for i in range(len(p.boxes)):
                     if touched(self.point_top, p.boxes[i]):
@@ -116,6 +112,14 @@ class Platform(pg.sprite.Sprite):
         self.boxes = []
         self.dir_boxes = []  # 0 upwards    1 to left    2 downwards    3 to right
         # self.rect.move_ip(random.randrange(100, 400), random.randrange(100, 400))    
+
+class MarkPoint(pg.sprite.Sprite):
+    images = []
+    def __init__(self, w, h):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = pg.Rect(0, 0, w, h)
+
 
 
 pg.init()
@@ -147,6 +151,7 @@ def main(winstyle=0):
         imagefiles_slinky.append("Slinky_21\Slinky_21_" + str(ind) + ".jpeg")
     Player.images = [load_image(im) for im in imagefiles_slinky]
     Platform.images = [load_image(im) for im in ["danger.gif", "danger_.gif"]]
+    MarkPoint.images = [load_image("red_.jpg")]
 
     # decorate the game window
     # icon = pg.transform.scale(Alien.images[0], (32, 32))
@@ -156,9 +161,9 @@ def main(winstyle=0):
     # create the background, tile the bgd image
     bgdtile = load_image("background.gif")
     background = pg.Surface(SCREENRECT.size)
-    for x in range(0, SCREENRECT.width, bgdtile.get_width()):
-        background.blit(bgdtile, (x, 0))
-    screen.blit(background, (0, 0))
+    # for x in range(0, SCREENRECT.width, bgdtile.get_width()):
+    #     background.blit(bgdtile, (x, 0))
+    # screen.blit(background, (0, 0))
     pg.display.flip()
 
     # load the sound effects
@@ -174,14 +179,17 @@ def main(winstyle=0):
     all = pg.sprite.RenderUpdates()
 
     # assign default groups to each sprite class
-    Player.containers = all
     Platform.containers = platforms, all
+    Player.containers = all
+    MarkPoint.containers = all    
+    
 
     # Create Some Starting Values
     clock = pg.time.Clock()
 
     # initialize our starting sprites
     player = Player()
+    markPoint = MarkPoint(Size_MarkPoint, Size_MarkPoint)
     
     for _ in range(3):
         instances_platform.append(Platform()) 
@@ -189,7 +197,7 @@ def main(winstyle=0):
     h = 70
     thickness = 10
 
-    left_top = [80, 80]
+    left_top = [180, 80]
     index = 0
     instances_platform[index].rect = pg.Rect(left_top[0], left_top[1], w, h)
     instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+w, left_top[1]+thickness]])
@@ -198,7 +206,7 @@ def main(winstyle=0):
     instances_platform[index].boxes.append([[left_top[0]+w, left_top[1]], [left_top[0]+w+thickness, left_top[1]+h]])
     instances_platform[index].dir_boxes = [0, 2, 1, 3]
 
-    left_top = [80, 300]
+    left_top = [180, 300]
     index = 1
     instances_platform[index].rect = pg.Rect(left_top[0], left_top[1], w, h)
     instances_platform[index].boxes.append([[left_top[0], left_top[1]], [left_top[0]+w, left_top[1]+thickness]])
@@ -207,7 +215,7 @@ def main(winstyle=0):
     instances_platform[index].boxes.append([[left_top[0]+w, left_top[1]], [left_top[0]+w+thickness, left_top[1]+h]])
     instances_platform[index].dir_boxes = [0, 2, 1, 3]
     
-    left_top = [80, 100]
+    left_top = [180, 100]
     index = 2
     w, h = h, w
     instances_platform[2].image = instances_platform[2].images[1]
@@ -230,6 +238,7 @@ def main(winstyle=0):
             coord_mouse = pg.mouse.get_pos()
             # print("Mouse Postion right now is: ", coord_mouse)
             player.drag(coord_mouse)
+            markPoint.rect = player.pos_markPoint
             # player.rect = pg.Rect(coord_mouse[0], coord_mouse[1], 40, 50)
 
         for event in pg.event.get():
