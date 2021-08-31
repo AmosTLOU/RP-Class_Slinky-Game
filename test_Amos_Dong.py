@@ -54,16 +54,30 @@ class Player(pg.sprite.Sprite):
         self.image = self.assignImage(self.images[0])
         # self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
         self.rect = pg.Rect(left, top, w, h)
-        self.point_bottom = [self.rect[0]+20, self.rect[1]+64]
+        self.point_bottom = [self.rect[0]+14, self.rect[1]+52]
         self.point_top = self.point_bottom[:]
         self.pos_markPoint = self.point_bottom[:]
         self.beingHold = False
     
-    def unholdStatus(self):
+    def getReleased(self):
+        self.rect = self.getNewRect(self.point_bottom)
         self.image = self.assignImage(self.images[0])
         self.point_top = self.point_bottom[:]
         self.pos_markPoint = self.point_bottom[:]
         self.beingHold = False
+
+    def getStandardXY(self, x, y):
+        if self.dir == 0:
+            return x, -y
+        elif self.dir == 1:
+            return -y, x
+        elif self.dir == 2:
+            return -x, y
+        elif self.dir == 3:
+            return y, x
+        else:
+            print("Error: dir out of range")
+            exit()
 
     def assignImage(self, image):
         return pg.transform.rotate(image, self.dir * 90)
@@ -78,6 +92,17 @@ class Player(pg.sprite.Sprite):
         elif self.dir == 3:
             bias_x, bias_y = -17, -14
         return pg.Rect(coord_bottom[0]+bias_x, coord_bottom[1]+bias_y, SizePlayerImage[0], SizePlayerImage[1])
+    
+    def getNewRect_(self, coord_bottom):   
+        if self.dir == 0:
+            bias_x, bias_y = -50, -52
+        elif self.dir == 1:
+            bias_x, bias_y = -57, -14
+        elif self.dir == 2:
+            bias_x, bias_y = -17, -17
+        elif self.dir == 3:
+            bias_x, bias_y = -17, -50
+        return pg.Rect(coord_bottom[0]+bias_x, coord_bottom[1]+bias_y, SizePlayerImage[0], SizePlayerImage[1])
 
     def drag(self, coord_mouse): 
         if e_dst(self.point_top, coord_mouse) > 20:  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
@@ -87,20 +112,22 @@ class Player(pg.sprite.Sprite):
                 for box in p.boxes:
                     if touched(coord_mouse, box):
                         return
-        x, y = coord_mouse[0] - self.point_bottom[0], self.point_bottom[1] - coord_mouse[1]
+        x, y = self.getStandardXY(coord_mouse[0] - self.point_bottom[0],  coord_mouse[1] - self.point_bottom[1])
         relative_distance = abs(x) + abs(y)
         if relative_distance > 100:  # get the top-end back
-            self.beingHold = False
-            self.point_top = self.point_bottom[:]
-            self.image = self.assignImage(self.images[0])
-            self.pos_markPoint = self.point_top[:]
+            self.getReleased()
             # TODO Apply the animation of slinky getting back
         else:
             self.beingHold = True
             self.point_top = coord_mouse[:] 
             # TODO Apply the image according to (x, y)   which is the relative distance
-            measure = abs(x) if self.dir == 0 or self.dir == 2 else abs(y)
-            self.image = self.assignImage(self.images[min(measure//3, 11)])
+            measure = abs(x)  
+            if x > 0:
+                self.rect = self.getNewRect(self.point_bottom)
+                self.image = self.assignImage(self.images[min(measure//3, 10)])
+            else:
+                self.rect = self.getNewRect_(self.point_bottom)
+                self.image = self.assignImage(self.images[20 - min(measure//3, 10)])
             self.pos_markPoint = self.point_top[:]
             for p in instances_platform:
                 for i in range(len(p.boxes)):
@@ -115,7 +142,7 @@ class Player(pg.sprite.Sprite):
         print("Slinky lands on a new point!")
         self.rect = self.getNewRect(coord_land)
         self.point_bottom = self.point_top[:]
-        self.unholdStatus()
+        self.getReleased()
         # TODO Apply the animation of slinky getting back        
         
         
@@ -251,8 +278,8 @@ def main(winstyle=0):
             mouse_1_hold = pg.mouse.get_pressed(3)[0]
             if mouse_1_hold:
                 player.drag(pg.mouse.get_pos())
-            else:
-                player.unholdStatus()
+            elif player.beingHold:
+                player.getReleased()
             markPoint.rect = player.pos_markPoint
 
             # get keys input:
