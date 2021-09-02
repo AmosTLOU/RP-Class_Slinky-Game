@@ -10,15 +10,30 @@ Multiplier_AngleToRad = PI / 180
 if not pg.image.get_extended():
     raise SystemExit("Sorry, extended image module required")
 
+# START
 FPS = 60
 Size_Screen = [1080, 720]
 SCREENRECT = pg.Rect(0, 0, Size_Screen[0], Size_Screen[1])
 Size_PlayerImage = [160, 160]
 
+Len_StaticSlinky = 45  # the distance from top to bottom when stationary
+LongestStretchingDistance = 200
+LeastDistanceForDraggingSlinky = 20 
+LeastDistanceForLandingSlinky = 30
+Speed_Camera = 7
+
+background_ImageName = "background.jpg"
+background_MusicName = "nervous.mp3"
+Imagefiles_items = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif"]
+
+Name_Platforms =     [  "6.gif",         "6.gif",      "2.gif"                  ]
+Position_Platforms = [  [1180, 1195],  [1308, 1195],   [1090, 940]              ]
 
 StartPos_Player = [1220, 1190]  # pos of the slinky's bottom midpoint
 Origin_Local = [StartPos_Player[0]-Size_Screen[0]//2, StartPos_Player[1]-3*Size_Screen[1]//4]
-Len_StaticSlinky = 45  # the distance from top to bottom when stationary
+# END
+
+
 Instances_platform = []
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
@@ -51,6 +66,7 @@ def e_dst(coord_a, coord_b):
 def globalToLocal(coord_global):
     return [coord_global[0] - Origin_Local[0], coord_global[1] - Origin_Local[1]]
 
+
 def localToGlobal(coord_local):
     return [coord_local[0] + Origin_Local[0], coord_local[1] + Origin_Local[1]]
 
@@ -65,7 +81,7 @@ class Player(pg.sprite.Sprite):
 
     def __init__(self):   # instance variable!
         pg.sprite.Sprite.__init__(self, self.containers)
-        self.angle = 0  # 0 upwards    1 to left    2 downwards    3 to right
+        self.angle = 0
         self.image = self.assignImage(self.images[0])
         self.rect = self.image.get_rect()
         self.size = [self.image.get_rect().width, self.image.get_rect().height]
@@ -107,9 +123,10 @@ class Player(pg.sprite.Sprite):
         self.markPoint.adjustImage(self.angle)
         self.beingHold = False
 
+
     def drag(self, coord_mouse): 
         coord_mouse = localToGlobal(coord_mouse)
-        if e_dst(self.pos_top, coord_mouse) > 20:  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
+        if e_dst(self.pos_top, coord_mouse) > LeastDistanceForDraggingSlinky :  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
             return
         if not self.beingHold:  # if it was the first mouse click on slinky and the mouse was in the range of any collider box, then do nothing
             for p in Instances_platform:
@@ -119,7 +136,7 @@ class Player(pg.sprite.Sprite):
                         return
         x, y = self.getStandardXY(coord_mouse[0] - self.pos_bottom[0],  -coord_mouse[1] + self.pos_bottom[1])
         relative_distance = abs(x) + abs(y)
-        if relative_distance > 150:  # get the top-end back
+        if relative_distance > LongestStretchingDistance:  # get the top-end back
             self.release()
         else:
             self.beingHold = True
@@ -137,7 +154,7 @@ class Player(pg.sprite.Sprite):
             for p in Instances_platform:
                 for i in range(len(p.boxes)):
                     if touched(self.pos_top, p.boxes[i]):
-                        if e_dst(self.pos_bottom, self.pos_top) < 30:  # if landpoint too close to bottom, then don't move
+                        if e_dst(self.pos_bottom, self.pos_top) < LeastDistanceForLandingSlinky:  # if landpoint too close to bottom, then don't move
                             self.release()
                             return
                         self.angle = p.angle_boxes[i]
@@ -156,10 +173,9 @@ class Player(pg.sprite.Sprite):
 
 
     def update(self):
-        speed = 7
         if self.shift_dst[0] > 0 or self.shift_dst[1] > 0:
             for i in range(2):
-                s = speed if self.shift_dst[i] > speed else self.shift_dst[i]
+                s = Speed_Camera if self.shift_dst[i] > Speed_Camera else self.shift_dst[i]
                 Origin_Local[i] += s if self.shift_dir[i] > 0 else -s
                 self.shift_dst[i] -= s
         self.markPoint.pos = self.pos_top[:]
@@ -177,18 +193,20 @@ class Platform(pg.sprite.Sprite):
         self.pos = [0, 0]
         self.size = [0, 0]
         self.boxes = []
-        self.angle_boxes = []  # 0 upwards    1 to left    2 downwards    3 to right
+        self.angle_boxes = []
         # self.rect.move_ip(random.randrange(100, 400), random.randrange(100, 400)) 
 
-    def setPos(self, left, top):
-        self.pos[0], self.pos[1] = left, top
+    # def setSize(self, width, height):
+    #     self.size[0], self.size[1] = width, height
     
-    def setSize(self, width, height):
-        self.size[0], self.size[1] = width, height
-    
-    def setPosAndSize(self, left, top, width, height):
+    # def setPosAndSize(self, left, top, width, height):
+    #     self.pos[0], self.pos[1] = left, top
+    #     self.size[0], self.size[1] = width, height
+
+    def setPosAndSize(self, left, top):
         self.pos[0], self.pos[1] = left, top
-        self.size[0], self.size[1] = width, height
+        self.rect = self.image.get_rect()
+        self.size[:] = self.rect[2:4]
 
     def setColliderBoxes(self, thickness):
         l = self.pos[0]
@@ -264,9 +282,10 @@ def main(winstyle=0):
     for i in range(len(Player.images)):
         Player.images[i] = pg.transform.scale(Player.images[i], Size_PlayerImage)
     
+    
     imagefiles_items = []
-    for ind in range(1, 7):
-        imagefiles_items.append("item\\" + str(ind) + ".gif")
+    for i in range(len(Imagefiles_items)):
+        imagefiles_items.append("item\\" + Imagefiles_items[i])
     Platform.images = [load_image(im) for im in imagefiles_items]
 
     MarkPoint.images = [load_image("eyes_.png")]
@@ -277,7 +296,7 @@ def main(winstyle=0):
     pg.display.set_caption("Slinky Game")
 
     # create the background, tile the bgd image
-    bgdtile = load_image("background.jpg")
+    bgdtile = load_image(background_ImageName)
     background = pg.Surface(SCREENRECT.size)
     for x in range(0, SCREENRECT.width, bgdtile.get_width()):
         background.blit(bgdtile, (x, 0))
@@ -286,7 +305,7 @@ def main(winstyle=0):
 
     # load the sound effects
     if music.music_mixer:
-        music_file = os.path.join(main_dir, "data", "music\\nervous.mp3")
+        music_file = os.path.join(main_dir, "data", "music\\" + background_MusicName)
         music.music_mixer.music.load(music_file)
         music.music_mixer.music.play(-1)
 
@@ -312,40 +331,18 @@ def main(winstyle=0):
     markPoint = MarkPoint()
     player.markPoint = markPoint
     
-    
-    num_p = 15
-    for _ in range(num_p):
-        Instances_platform.append(Platform()) 
-    # TODO set the pos manually
+    dct = {}
+    index = 0
+    for name in Imagefiles_items:
+        dct[name] = index
+        index += 1
+    num_p = len(Name_Platforms)
     thickness = 10
-    Instances_platform[0].setPosAndSize(1180, 1195, 128, 64)
-    Instances_platform[0].image = Platform.images[5]
-    Instances_platform[5].setPosAndSize(1308, 1195, 128, 64)
-    Instances_platform[5].image = Platform.images[5]
-    Instances_platform[1].setPosAndSize(1090, 940, 64, 64)
-    Instances_platform[1].image = Platform.images[2]
-    Instances_platform[2].setPosAndSize(1060, 1004, 64, 64)
-    Instances_platform[2].image = Platform.images[2]
-    Instances_platform[3].setPosAndSize(1080, 1068, 64, 64)
-    Instances_platform[3].image = Platform.images[2]
-    Instances_platform[4].setPosAndSize(1100, 1132, 64, 64)
-    Instances_platform[4].image = Platform.images[2]
-    Instances_platform[6].setPosAndSize(1190, 850, 128, 64)
-    Instances_platform[6].image = Platform.images[3]
-    Instances_platform[7].setPosAndSize(1500, 1250, 128, 64)
-    Instances_platform[7].image = Platform.images[4]
-    Instances_platform[8].setPosAndSize(1650, 1150, 64, 64)
-    Instances_platform[8].image = Platform.images[0]
-    Instances_platform[9].setPosAndSize(1750, 1050, 64, 64)
-    Instances_platform[9].image = Platform.images[1]
-    Instances_platform[10].setPosAndSize(1820, 1000, 64, 64)
-    Instances_platform[10].image = Platform.images[1]
-    Instances_platform[11].setPosAndSize(1890, 1050, 64, 64)
-    Instances_platform[11].image = Platform.images[1]
-    Instances_platform[12].setPosAndSize(1960, 1100, 64, 64)
-    Instances_platform[12].image = Platform.images[1]
     for i in range(num_p):
-        Instances_platform[i].setColliderBoxes(thickness)
+        Instances_platform.append(Platform()) 
+        Instances_platform[i].image = Platform.images[dct[Name_Platforms[i]]]
+        Instances_platform[i].setPosAndSize(Position_Platforms[i][0], Position_Platforms[i][1])
+        Instances_platform[i].setColliderBoxes(thickness)       
 
 
     # Run our main loop whilst the player is alive.
