@@ -61,6 +61,7 @@ def touched(coord, box):
 
 class Player(pg.sprite.Sprite):   
     images = []  # class static variable!
+    music = None
 
     def __init__(self):   # instance variable!
         pg.sprite.Sprite.__init__(self, self.containers)
@@ -97,7 +98,9 @@ class Player(pg.sprite.Sprite):
     def assignImage(self, image):
         return pg.transform.rotate(image, self.angle)
 
-    def release(self):
+    def release(self, land=False):
+        if not land:
+            self.music.play(0)
         self.image = self.assignImage(self.images[0])
         self.pos_top = self.getTop()
         self.markPoint.pos = self.pos_top[:]
@@ -143,12 +146,13 @@ class Player(pg.sprite.Sprite):
         
     def land(self):
         print("Slinky lands on a new point!")
+        self.music.play(1)
         self.shift_dst[0], self.shift_dst[1] = abs(self.pos_top[0] - self.pos_bottom[0]), abs(self.pos_top[1] - self.pos_bottom[1])
         self.shift_axis_further = 0 if self.shift_dst[0] >= self.shift_dst[1] else 1
         self.shift_dir[0] = 1 if (self.pos_top[0] - self.pos_bottom[0]) > 0 else -1
         self.shift_dir[1] = 1 if (self.pos_top[1] - self.pos_bottom[1]) > 0 else -1
         self.pos_bottom = self.pos_top[:]
-        self.release()
+        self.release(land=True)
 
 
     def update(self):
@@ -219,6 +223,15 @@ class MarkPoint(pg.sprite.Sprite):
         local_coord = globalToLocal(self.pos)
         self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
 
+class Music():
+    def __init__(self):
+        self.sfx = [load_sound("slinky_back.wav"), load_sound("slinky_land.wav")]
+        self.music_mixer = pg.mixer
+
+    def play(self, ind):
+        self.sfx[ind].play()
+
+
 pg.init()
 # Set the display mode
 winstyle = 0  # |FULLSCREEN
@@ -231,7 +244,8 @@ def main(winstyle=0):
     if pg.get_sdl_version()[0] == 2:
         pg.mixer.pre_init(44100, 32, 2, 1024)
     pg.init()
-    if pg.mixer and not pg.mixer.get_init():
+    music = Music()
+    if music.music_mixer and not music.music_mixer.get_init():
         print("Warning, no sound")
         pg.mixer = None
 
@@ -271,10 +285,12 @@ def main(winstyle=0):
     pg.display.flip()
 
     # load the sound effects
-    if pg.mixer:
-        music = os.path.join(main_dir, "data\Music", "house_lo.wav")
-        pg.mixer.music.load(music)
-        pg.mixer.music.play(-1)
+    if music.music_mixer:
+        music_file = os.path.join(main_dir, "data", "music\\nervous.mp3")
+        music.music_mixer.music.load(music_file)
+        music.music_mixer.music.play(-1)
+
+    Player.music = music
 
     # Initialize Game Groups
     platforms = pg.sprite.Group()
