@@ -3,16 +3,23 @@ import os
 import math
 import pygame as pg
 
+PI = 3.1415926
+Multiplier_AngleToRad = PI / 180
+
 # see if we can load more than standard BMP
 if not pg.image.get_extended():
     raise SystemExit("Sorry, extended image module required")
 
-SCREENRECT = pg.Rect(0, 0, 1200, 480)
-Size_MarkPoint = 10
-SizePlayerImage = [64, 64]
-SCORE = 0
+FPS = 60
+Size_Screen = [1080, 720]
+SCREENRECT = pg.Rect(0, 0, Size_Screen[0], Size_Screen[1])
+Size_PlayerImage = [160, 160]
 
-instances_platform = []
+
+StartPos_Player = [1220, 1190]  # pos of the slinky's bottom midpoint
+Origin_Local = [StartPos_Player[0]-Size_Screen[0]//2, StartPos_Player[1]-3*Size_Screen[1]//4]
+Len_StaticSlinky = 45  # the distance from top to bottom when stationary
+Instances_platform = []
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
 
@@ -22,13 +29,13 @@ def load_image(file):
         surface = pg.image.load(file)
     except pg.error:
         raise SystemExit('Could not load image "%s" %s' % (file, pg.get_error()))
-    return surface.convert()
+    return surface.convert_alpha()
 
 
 def load_sound(file):
     if not pg.mixer:
         return None
-    file = os.path.join(main_dir, "data", file)
+    file = os.path.join(main_dir, "data\Music", file)
     try:
         sound = pg.mixer.Sound(file)
         return sound
@@ -41,6 +48,13 @@ def e_dst(coord_a, coord_b):
     return math.sqrt((coord_a[0] - coord_b[0])**2 + (coord_a[1] - coord_b[1])**2)
 
 
+def globalToLocal(coord_global):
+    return [coord_global[0] - Origin_Local[0], coord_global[1] - Origin_Local[1]]
+
+def localToGlobal(coord_local):
+    return [coord_local[0] + Origin_Local[0], coord_local[1] + Origin_Local[1]]
+
+
 def touched(coord, box):
     return True if box[0][0] <= coord[0] and coord[0] <= box[1][0] and box[0][1] <= coord[1] and coord[1] <= box[1][1] else False 
 
@@ -48,103 +62,105 @@ def touched(coord, box):
 class Player(pg.sprite.Sprite):   
     images = []  # class static variable!
 
-    def __init__(self, left, top, w, h):   # instance variable!
+    def __init__(self):   # instance variable!
         pg.sprite.Sprite.__init__(self, self.containers)
-        self.dir = 0  # 0 upwards    1 to left    2 downwards    3 to right
+        self.angle = 0  # 0 upwards    1 to left    2 downwards    3 to right
         self.image = self.assignImage(self.images[0])
-        # self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
-        self.rect = pg.Rect(left, top, w, h)
-        self.point_bottom = [self.rect[0]+14, self.rect[1]+52]
-        self.point_top = self.point_bottom[:]
-        self.pos_markPoint = self.point_bottom[:]
+        self.rect = self.image.get_rect()
+        self.size = [self.image.get_rect().width, self.image.get_rect().height]
+        self.pos_bottom = [StartPos_Player[0], StartPos_Player[1]]
+        self.pos_top = [self.pos_bottom[0], self.pos_bottom[1]-Len_StaticSlinky]
+        self.markPoint = None
+        self.shift_dst = [0, 0]
+        self.shift_dir = [1, 1]
         self.beingHold = False
     
-    def getReleased(self):
-        self.rect = self.getNewRect(self.point_bottom)
-        self.image = self.assignImage(self.images[0])
-        self.point_top = self.point_bottom[:]
-        self.pos_markPoint = self.point_bottom[:]
-        self.beingHold = False
+    def getTop(self):
+        x = 0
+        y = Len_StaticSlinky
+        cos_theta = round(math.cos(self.angle * Multiplier_AngleToRad))
+        sin_theta = round(math.sin(self.angle * Multiplier_AngleToRad))
+        x_ =  cos_theta * x - sin_theta * y
+        y_ =  sin_theta * x + cos_theta * y
+        return [self.pos_bottom[0] + x_, self.pos_bottom[1] - y_]
 
-    def getStandardXY(self, x, y):
-        if self.dir == 0:
-            return x, -y
-        elif self.dir == 1:
-            return -y, x
-        elif self.dir == 2:
-            return -x, y
-        elif self.dir == 3:
-            return y, x
-        else:
-            print("Error: dir out of range")
+    def getStandardXY(self, x, y):        
+        if self.angle < 0 or self.angle > 360:
+            print("Error: angele out of range")
             exit()
+        cos_theta = round(math.cos(self.angle * Multiplier_AngleToRad))
+        sin_theta = round(math.sin(self.angle * Multiplier_AngleToRad))
+        x_ =  cos_theta * x + sin_theta * y
+        y_ =  -sin_theta * x + cos_theta * y
+        return x_, y_
 
     def assignImage(self, image):
-        return pg.transform.rotate(image, self.dir * 90)
+        return pg.transform.rotate(image, self.angle)
 
-    def getNewRect(self, coord_bottom):   
-        if self.dir == 0:
-            bias_x, bias_y = -14, -52
-        elif self.dir == 1:
-            bias_x, bias_y = -57, -50
-        elif self.dir == 2:
-            bias_x, bias_y = -50, -17
-        elif self.dir == 3:
-            bias_x, bias_y = -17, -14
-        return pg.Rect(coord_bottom[0]+bias_x, coord_bottom[1]+bias_y, SizePlayerImage[0], SizePlayerImage[1])
-    
-    def getNewRect_(self, coord_bottom):   
-        if self.dir == 0:
-            bias_x, bias_y = -50, -52
-        elif self.dir == 1:
-            bias_x, bias_y = -57, -14
-        elif self.dir == 2:
-            bias_x, bias_y = -17, -17
-        elif self.dir == 3:
-            bias_x, bias_y = -17, -50
-        return pg.Rect(coord_bottom[0]+bias_x, coord_bottom[1]+bias_y, SizePlayerImage[0], SizePlayerImage[1])
+    def release(self):
+        self.image = self.assignImage(self.images[0])
+        self.pos_top = self.getTop()
+        self.markPoint.pos = self.pos_top[:]
+        self.markPoint.adjustImage(self.angle)
+        self.beingHold = False
 
     def drag(self, coord_mouse): 
-        if e_dst(self.point_top, coord_mouse) > 20:  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
+        coord_mouse = localToGlobal(coord_mouse)
+        if e_dst(self.pos_top, coord_mouse) > 20:  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
             return
         if not self.beingHold:  # if it was the first mouse click on slinky and the mouse was in the range of any collider box, then do nothing
-            for p in instances_platform:
+            for p in Instances_platform:
                 for box in p.boxes:
                     if touched(coord_mouse, box):
+                        self.release()
                         return
-        x, y = self.getStandardXY(coord_mouse[0] - self.point_bottom[0],  coord_mouse[1] - self.point_bottom[1])
+        x, y = self.getStandardXY(coord_mouse[0] - self.pos_bottom[0],  -coord_mouse[1] + self.pos_bottom[1])
         relative_distance = abs(x) + abs(y)
-        if relative_distance > 100:  # get the top-end back
-            self.getReleased()
-            # TODO Apply the animation of slinky getting back
+        if relative_distance > 150:  # get the top-end back
+            self.release()
         else:
             self.beingHold = True
-            self.point_top = coord_mouse[:] 
+            self.pos_top = coord_mouse[:] 
             # TODO Apply the image according to (x, y)   which is the relative distance
-            measure = abs(x)  
+            measure = abs(x)
             if x > 0:
-                self.rect = self.getNewRect(self.point_bottom)
-                self.image = self.assignImage(self.images[min(measure//3, 10)])
+                self.image = self.assignImage(self.images[min(measure//3, 16)])
+                dir_markPoint = 1
             else:
-                self.rect = self.getNewRect_(self.point_bottom)
-                self.image = self.assignImage(self.images[20 - min(measure//3, 10)])
-            self.pos_markPoint = self.point_top[:]
-            for p in instances_platform:
+                self.image = self.assignImage(pg.transform.flip(self.images[min(measure//3, 16)], 1, 0))
+                dir_markPoint = 0
+            self.markPoint.pos = self.pos_top[:]
+            self.markPoint.adjustImage(self.angle, dir_markPoint)
+            for p in Instances_platform:
                 for i in range(len(p.boxes)):
-                    if touched(self.point_top, p.boxes[i]):
-                        if e_dst(self.point_bottom, self.point_top) < 20:  # if landpoint too close to bottom, then don't move
+                    if touched(self.pos_top, p.boxes[i]):
+                        if e_dst(self.pos_bottom, self.pos_top) < 30:  # if landpoint too close to bottom, then don't move
+                            self.release()
                             return
-                        self.dir = p.dir_boxes[i]
-                        self.land(self.point_top)
+                        self.angle = p.angle_boxes[i]
+                        self.land()
                         return
         
-    def land(self, coord_land):
+    def land(self):
         print("Slinky lands on a new point!")
-        self.rect = self.getNewRect(coord_land)
-        self.point_bottom = self.point_top[:]
-        self.getReleased()
-        # TODO Apply the animation of slinky getting back        
-        
+        self.shift_dst[0], self.shift_dst[1] = abs(self.pos_top[0] - self.pos_bottom[0]), abs(self.pos_top[1] - self.pos_bottom[1])
+        self.shift_axis_further = 0 if self.shift_dst[0] >= self.shift_dst[1] else 1
+        self.shift_dir[0] = 1 if (self.pos_top[0] - self.pos_bottom[0]) > 0 else -1
+        self.shift_dir[1] = 1 if (self.pos_top[1] - self.pos_bottom[1]) > 0 else -1
+        self.pos_bottom = self.pos_top[:]
+        self.release()
+
+
+    def update(self):
+        speed = 7
+        if self.shift_dst[0] > 0 or self.shift_dst[1] > 0:
+            for i in range(2):
+                s = speed if self.shift_dst[i] > speed else self.shift_dst[i]
+                Origin_Local[i] += s if self.shift_dir[i] > 0 else -s
+                self.shift_dst[i] -= s
+        self.markPoint.pos = self.pos_top[:]
+        local_coord = globalToLocal(self.pos_bottom)
+        self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
         
 
 class Platform(pg.sprite.Sprite):
@@ -154,37 +170,54 @@ class Platform(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
+        self.pos = [0, 0]
+        self.size = [0, 0]
         self.boxes = []
-        self.dir_boxes = []  # 0 upwards    1 to left    2 downwards    3 to right
+        self.angle_boxes = []  # 0 upwards    1 to left    2 downwards    3 to right
         # self.rect.move_ip(random.randrange(100, 400), random.randrange(100, 400)) 
 
+    def setPos(self, left, top):
+        self.pos[0], self.pos[1] = left, top
+    
+    def setSize(self, width, height):
+        self.size[0], self.size[1] = width, height
+    
+    def setPosAndSize(self, left, top, width, height):
+        self.pos[0], self.pos[1] = left, top
+        self.size[0], self.size[1] = width, height
+
     def setColliderBoxes(self, thickness):
-        l = self.rect[0]
-        t = self.rect[1]
-        w = self.rect[2]
-        h = self.rect[3]  
+        l = self.pos[0]
+        t = self.pos[1]
+        w = self.size[0]
+        h = self.size[1]  
         self.boxes.append([[l, t], [l+w, t+thickness]])
         self.boxes.append([[l, t+h], [l+w, t+h+thickness]])
         self.boxes.append([[l, t], [l+thickness, t+h]])
         self.boxes.append([[l+w, t], [l+w+thickness, t+h]])
-        # # whole area:
-        # self.boxes.append([[l, t], [l+w, t+h]])  
-        self.dir_boxes = [0, 2, 1, 3]
+        self.angle_boxes = [0, 180, 90, 270]        
     
-    def setRect(self, left, top, w, h):
-        self.rect = pg.Rect(left, top, w, h)
-
+    def update(self):
+        local_coord = globalToLocal(self.pos)
+        self.rect = pg.Rect(local_coord[0], local_coord[1], self.size[0], self.size[1])
 
 
 class MarkPoint(pg.sprite.Sprite):
     images = []
 
-    def __init__(self, w, h):
+    def __init__(self):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
-        self.rect = pg.Rect(0, 0, w, h)
+        self.rect = self.image.get_rect()
+        self.pos = [0, 0]
+        self.size = [self.rect[2], self.rect[3]]
 
-
+    def adjustImage(self, angle, dir=0):
+        self.image = pg.transform.rotate(pg.transform.flip(self.images[0], dir, 0), angle)
+        
+    def update(self):
+        local_coord = globalToLocal(self.pos)
+        self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
 
 pg.init()
 # Set the display mode
@@ -211,64 +244,92 @@ def main(winstyle=0):
     # Load images, assign to sprite classes
     # (do this before the classes are used, after screen setup)
     imagefiles_slinky = []
-    for ind in range(1, 22):
-        imagefiles_slinky.append("Slinky_21\Slinky_21_" + str(ind) + ".jpeg")
+    for ind in range(1, 18):
+        imagefiles_slinky.append("Slinky_17\slinky (" + str(ind) + ").png")
     Player.images = [load_image(im) for im in imagefiles_slinky]
-    Platform.images = [load_image(im) for im in ["danger.gif", "danger_.gif"]]
-    MarkPoint.images = [load_image("red_.jpg")]
+    for i in range(len(Player.images)):
+        Player.images[i] = pg.transform.scale(Player.images[i], Size_PlayerImage)
+    
+    imagefiles_items = []
+    for ind in range(1, 7):
+        imagefiles_items.append("item\\" + str(ind) + ".gif")
+    Platform.images = [load_image(im) for im in imagefiles_items]
+
+    MarkPoint.images = [load_image("eyes_.png")]
 
     # decorate the game window
-    # icon = pg.transform.scale(Alien.images[0], (32, 32))
-    # pg.display.set_icon(icon)
+    icon = pg.transform.scale(load_image("icon.jpg"), (32, 32))
+    pg.display.set_icon(icon)
     pg.display.set_caption("Slinky Game")
 
     # create the background, tile the bgd image
-    bgdtile = load_image("background.gif")
+    bgdtile = load_image("background.jpg")
     background = pg.Surface(SCREENRECT.size)
-    # for x in range(0, SCREENRECT.width, bgdtile.get_width()):
-    #     background.blit(bgdtile, (x, 0))
-    # screen.blit(background, (0, 0))
+    for x in range(0, SCREENRECT.width, bgdtile.get_width()):
+        background.blit(bgdtile, (x, 0))
+    screen.blit(background, (0, 0))
     pg.display.flip()
 
     # load the sound effects
-    boom_sound = load_sound("boom.wav")
-    shoot_sound = load_sound("car_door.wav")
     if pg.mixer:
-        music = os.path.join(main_dir, "data", "house_lo.wav")
+        music = os.path.join(main_dir, "data\Music", "house_lo.wav")
         pg.mixer.music.load(music)
         pg.mixer.music.play(-1)
 
     # Initialize Game Groups
     platforms = pg.sprite.Group()
-    all = pg.sprite.RenderUpdates()
+    # all = pg.sprite.RenderUpdates()
+    all = pg.sprite.OrderedUpdates()
 
     # assign default groups to each sprite class
     Platform.containers = platforms, all
+    
     Player.containers = all
-    MarkPoint.containers = all    
+    MarkPoint.containers = all
     
 
     # Create Some Starting Values
     clock = pg.time.Clock()
 
     # initialize our starting sprites
-    player = Player(220, 220, SizePlayerImage[0], SizePlayerImage[1])
-    markPoint = MarkPoint(Size_MarkPoint, Size_MarkPoint)
+    player = Player()
+    markPoint = MarkPoint()
+    player.markPoint = markPoint
     
-    num_p = 5
+    
+    num_p = 15
     for _ in range(num_p):
-        instances_platform.append(Platform()) 
+        Instances_platform.append(Platform()) 
     # TODO set the pos manually
     thickness = 10
-    instances_platform[0].setRect(180, 80, 260, 70)
-    instances_platform[1].setRect(180, 270, 260, 70)
-    instances_platform[2].setRect(110, 80, 70, 260)
-    instances_platform[2].image = Platform.images[1]
-    instances_platform[3].setRect(500, 300, 260, 70)
-    instances_platform[4].setRect(820, 50, 70, 260)
-    instances_platform[4].image = Platform.images[1]
+    Instances_platform[0].setPosAndSize(1180, 1195, 128, 64)
+    Instances_platform[0].image = Platform.images[5]
+    Instances_platform[5].setPosAndSize(1308, 1195, 128, 64)
+    Instances_platform[5].image = Platform.images[5]
+    Instances_platform[1].setPosAndSize(1090, 940, 64, 64)
+    Instances_platform[1].image = Platform.images[2]
+    Instances_platform[2].setPosAndSize(1060, 1004, 64, 64)
+    Instances_platform[2].image = Platform.images[2]
+    Instances_platform[3].setPosAndSize(1080, 1068, 64, 64)
+    Instances_platform[3].image = Platform.images[2]
+    Instances_platform[4].setPosAndSize(1100, 1132, 64, 64)
+    Instances_platform[4].image = Platform.images[2]
+    Instances_platform[6].setPosAndSize(1190, 850, 128, 64)
+    Instances_platform[6].image = Platform.images[3]
+    Instances_platform[7].setPosAndSize(1500, 1250, 128, 64)
+    Instances_platform[7].image = Platform.images[4]
+    Instances_platform[8].setPosAndSize(1650, 1150, 64, 64)
+    Instances_platform[8].image = Platform.images[0]
+    Instances_platform[9].setPosAndSize(1750, 1050, 64, 64)
+    Instances_platform[9].image = Platform.images[1]
+    Instances_platform[10].setPosAndSize(1820, 1000, 64, 64)
+    Instances_platform[10].image = Platform.images[1]
+    Instances_platform[11].setPosAndSize(1890, 1050, 64, 64)
+    Instances_platform[11].image = Platform.images[1]
+    Instances_platform[12].setPosAndSize(1960, 1100, 64, 64)
+    Instances_platform[12].image = Platform.images[1]
     for i in range(num_p):
-        instances_platform[i].setColliderBoxes(thickness)
+        Instances_platform[i].setColliderBoxes(thickness)
 
 
     # Run our main loop whilst the player is alive.
@@ -279,8 +340,7 @@ def main(winstyle=0):
             if mouse_1_hold:
                 player.drag(pg.mouse.get_pos())
             elif player.beingHold:
-                player.getReleased()
-            markPoint.rect = player.pos_markPoint
+                player.release()
 
             # get keys input:
             if event.type == pg.QUIT:
@@ -324,8 +384,8 @@ def main(winstyle=0):
         dirty = all.draw(screen)
         pg.display.update(dirty)
 
-        # cap the framerate at 40fps. Also called 40HZ or 40 times per second.
-        clock.tick(40)
+        # set the framerate
+        clock.tick(FPS)
 
     if pg.mixer:
         pg.mixer.music.fadeout(1000)
