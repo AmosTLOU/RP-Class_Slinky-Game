@@ -27,7 +27,7 @@ background_MusicName = "nervous.mp3"
 Imagefiles_items = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif"]
 
 Name_Platforms =     [  "6.gif",         "6.gif",      "2.gif"                  ]
-Position_Platforms = [  [1180, 1195],  [1308, 1195],   [1090, 940]              ]
+Position_Platforms = [  [1180, 1195],  [11308, 1195],   [1090, 940]              ]
 
 StartPos_Player = [1220, 1190]  # pos of the slinky's bottom midpoint
 Origin_Local = [StartPos_Player[0]-Size_Screen[0]//2, StartPos_Player[1]-3*Size_Screen[1]//4]
@@ -194,14 +194,6 @@ class Platform(pg.sprite.Sprite):
         self.size = [0, 0]
         self.boxes = []
         self.angle_boxes = []
-        # self.rect.move_ip(random.randrange(100, 400), random.randrange(100, 400)) 
-
-    # def setSize(self, width, height):
-    #     self.size[0], self.size[1] = width, height
-    
-    # def setPosAndSize(self, left, top, width, height):
-    #     self.pos[0], self.pos[1] = left, top
-    #     self.size[0], self.size[1] = width, height
 
     def setPosAndSize(self, left, top):
         self.pos[0], self.pos[1] = left, top
@@ -240,6 +232,61 @@ class MarkPoint(pg.sprite.Sprite):
     def update(self):
         local_coord = globalToLocal(self.pos)
         self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
+
+
+class Interactable(pg.sprite.Sprite):
+    images = []
+    
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.pos = [0, 0]
+        self.size = [self.rect[2], self.rect[3]]
+        self.box = []
+    
+    def react():
+        todo = 1
+    
+    def setBox(self):
+        l = self.pos[0]
+        t = self.pos[1]
+        w = self.size[0]
+        h = self.size[1]  
+        self.box = [[l, t], [l+w, t+h]]        
+    
+    def update(self):
+        local_coord = globalToLocal(self.pos)
+        self.rect = pg.Rect(local_coord[0], local_coord[1], self.size[0], self.size[1])
+
+
+class Chaser(pg.sprite.Sprite):
+    images = []
+    
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self, self.containers)
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.pos = [0, 0]
+        self.size = [self.rect[2], self.rect[3]]
+        self.box = []
+        self.prey = None
+
+    def chase(self):
+        # TODO
+        prospective_move = [self.prey.pos_bottom[0] - self.pos[0], self.prey.pos_bottom[1] - self.pos[1]]
+        speed = 10
+        for p in Instances_platform:
+            for i in range(len(p.boxes)):
+                if touched(self.pos, p.boxes[i]):
+                    # TODO
+                    return
+
+
+    def update(self):
+        local_coord = globalToLocal(self.pos)
+        self.rect = pg.Rect(local_coord[0], local_coord[1], self.size[0], self.size[1])
+
 
 class Music():
     def __init__(self):
