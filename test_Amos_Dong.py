@@ -19,9 +19,8 @@ Size_ChaserImage = [200, 200]
 Size_InteractableImage = [64, 64]
 
 Len_StaticSlinky = 45  # the distance from top to bottom when stationary
-LongestStretchingDistance = 200
-ExtraStretchingDistance = 200
-LeastDistanceForDraggingSlinky = 20 
+LongestStretchingDistance = 100  # better not changed, or the movement would look like anti-intuitive
+LeastDistanceForDraggingSlinky = 35 
 LeastDistanceForLandingSlinky = 30
 Speed_Camera = 7   # pixel(s) per frame
 Time_Chaser_Move = 0.05  # how long cat should wait for next move
@@ -39,7 +38,7 @@ Imagefiles_items = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif"]
 Name_Platforms =     [  "6.gif",         "6.gif",      "2.gif"                  ]
 Position_Platforms = [  [1180, 1195],  [1308, 1195],   [1090, 940]              ]
 
-Name_Interactables =  [  "power",                             ]
+Name_Interactables =  [  "honey",                             ]
 Position_Interactables = [  [1350, 1126]                ]
 
 StartPos_Player = [1220, 1190]  # pos of the slinky's bottom midpoint
@@ -117,16 +116,17 @@ class Platform(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.size[:] = self.rect[2:4]
 
-    def setColliderBoxes(self, thickness):
+    def setColliderBoxes(self):
         l = self.pos[0]
         t = self.pos[1]
         w = self.size[0]
-        h = self.size[1]  
+        h = self.size[1]
+        thickness = 10
         self.box = [[l, t], [l+w, t+h]]
-        self.boxes.append([[l, t], [l+w, t+thickness]])
-        self.boxes.append([[l, t+h-thickness], [l+w, t+h]])
-        self.boxes.append([[l, t], [l+thickness, t+h]])
-        self.boxes.append([[l+w-thickness, t], [l+w, t+h]])
+        self.boxes.append([[l, t-thickness], [l+w, t]])
+        self.boxes.append([[l, t+h], [l+w, t+h+thickness]])
+        self.boxes.append([[l-thickness, t], [l, t+h]])
+        self.boxes.append([[l+w, t], [l+w+thickness, t+h]])
         self.angle_boxes = [0, 180, 90, 270]        
     
     def getHit(self):
@@ -159,15 +159,14 @@ class Interactable(pg.sprite.Sprite):
         self.frame_cnt = 0
         self.ind_reaction = ind_reaction_
     
-    
-    def react(self):  # 0 honey trap  1 stop watch 2 stretching power
+    def react(self):  # 0 honey 1 stopwatch 2 power
         # TODO play some sound effect
         if self.ind_reaction == 0:
             self.player.beingStuck = True
         elif self.ind_reaction == 1:
             self.chaser.frozen = True
         elif self.ind_reaction == 2:
-            self.player.getExtraStretch = True
+            self.player.getPower = True
         self.image = load_image("transparent.png")
 
     def setPosAndSize(self, left, top):
@@ -206,8 +205,8 @@ class Player(pg.sprite.Sprite):
         self.beingHold = False
         self.beingStuck = False
         self.stuck_frame = 0
-        self.getExtraStretch = False
-        self.extraStretch_frame = 0
+        self.getPower = False
+        self.power_frame = 0
     
     def getTop(self):
         x = 0
@@ -232,10 +231,7 @@ class Player(pg.sprite.Sprite):
         return pg.transform.rotate(image, self.angle)
 
     def release(self, land=False):
-        if not land and not self.beingHold:
-            self.music.play(0)
-        if self.beingHold:
-            # TODO add getstuck sfx
+        if not land and not self.beingStuck:
             self.music.play(0)
         self.image = self.assignImage(self.images[0])
         self.pos_top = self.getTop()
@@ -255,21 +251,25 @@ class Player(pg.sprite.Sprite):
                         self.release()
                         return
         x, y = self.getStandardXY(coord_mouse[0] - self.pos_bottom[0],  -coord_mouse[1] + self.pos_bottom[1])
-        relative_distance = abs(x) + abs(y)
-        max_stretch = LongestStretchingDistance + ExtraStretchingDistance if self.getExtraStretch else LongestStretchingDistance
-        if relative_distance > max_stretch:  # get the top-end back
+        euler_distance = math.sqrt(abs(x)**2 + abs(y)**2)
+        if euler_distance > LongestStretchingDistance:  # get the top-end back
             self.release()
         else:
             self.beingHold = True
             self.pos_top = coord_mouse[:] 
             # TODO Apply the image according to (x, y)   which is the relative distance
-            measure = abs(x)
+            x_to_scale = round(abs(x)//3)
+            num_pics = 17
             if x > 0:
-                self.image = self.assignImage(self.images[min(measure//3, 16)])
                 dir_markPoint = 1
+                self.image = self.assignImage(self.images[min(x_to_scale, num_pics-1)])
+                if y < 0:
+                    TODO = 1
             else:
-                self.image = self.assignImage(pg.transform.flip(self.images[min(measure//3, 16)], 1, 0))
                 dir_markPoint = 0
+                self.image = self.assignImage(pg.transform.flip(self.images[min(x_to_scale, num_pics-1)], 1, 0))
+                if y < 0:
+                    TODO = 1
             self.markPoint.pos = self.pos_top[:]
             self.markPoint.adjustImage(self.angle, dir_markPoint)
             for item in Instances_interactable:
@@ -290,6 +290,15 @@ class Player(pg.sprite.Sprite):
     def land(self):
         # print("Slinky lands on a new point!")
         self.music.play(1)
+        bias = 5
+        if self.angle == 0:
+            self.pos_top[1] += bias
+        elif self.angle == 180:
+            self.pos_top[1] -= bias
+        elif self.angle == 90:
+            self.pos_top[0] += bias
+        elif self.angle == 270:
+            self.pos_top[0] -= bias
         self.shift_dst[0], self.shift_dst[1] = abs(self.pos_top[0] - self.pos_bottom[0]), abs(self.pos_top[1] - self.pos_bottom[1])
         self.shift_axis_further = 0 if self.shift_dst[0] >= self.shift_dst[1] else 1
         self.shift_dir[0] = 1 if (self.pos_top[0] - self.pos_bottom[0]) > 0 else -1
@@ -306,12 +315,12 @@ class Player(pg.sprite.Sprite):
             self.stuck_frame = 0
             self.beingStuck = False
     
-    def strecthPowerCountDown(self):
-        self.extraStretch_frame += 1
+    def PowerCountDown(self):
+        self.power_frame += 1
         f = round(Time_FurtherStretch_Player * FPS)
-        if f == self.extraStretch_frame:
-            self.extraStretch_frame = 0
-            self.getExtraStretch = False
+        if f == self.power_frame:
+            self.power_frame = 0
+            self.getPower = False
 
 
     def update(self):
@@ -322,8 +331,8 @@ class Player(pg.sprite.Sprite):
                 self.shift_dst[i] -= s
         if self.beingStuck:
             self.getStuck()
-        if self.getExtraStretch:
-            self.strecthPowerCountDown()
+        if self.getPower:
+            self.PowerCountDown()
         self.markPoint.pos = self.pos_top[:]
         local_coord = globalToLocal(self.pos_bottom)
         self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
@@ -525,7 +534,6 @@ def main(winstyle=0):
     dct["honey"] = 0
     dct["stopwatch"] = 1
     dct["power"] = 2
-    thickness = 10
 
     for i in range(len(Name_Interactables)):
         ind = dct[Name_Interactables[i]]
@@ -543,7 +551,7 @@ def main(winstyle=0):
         Instances_platform[i].image = Platform.images[ind]
         Instances_platform[i].imageGetHit = Platform.imagesGetHit[ind]
         Instances_platform[i].setPosAndSize(Position_Platforms[i][0], Position_Platforms[i][1])
-        Instances_platform[i].setColliderBoxes(thickness)       
+        Instances_platform[i].setColliderBoxes()       
 
     cat = Chaser()
     cat.prey = player
