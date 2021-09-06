@@ -1,1 +1,1 @@
-python test_Amos_Dong.py
+python main.py
