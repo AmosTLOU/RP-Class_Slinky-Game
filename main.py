@@ -47,7 +47,7 @@ MusicName_bg = "nervous.mp3"
 Imagefiles_item = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif"]
 
 Names_Platform =     [  "6.gif",         "6.gif",      "2.gif"                  ]
-Positions_Platform = [  [1180, 1195],  [1308, 1195],   [1090, 940]              ]
+Positions_Platform = [  [240, 460],  [1308, 1195],   [1090, 940]              ]
 
 Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"     , "HoneyTrap_"     ]
 Positions_Interactable = [   [260, 440],  [1350, 1146],    [1450, 1100]   , [1100, 1050]     ]
@@ -76,7 +76,11 @@ class PureImage(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
+        self.pos = [0, 0]
 
+    def update(self):
+        local_coord = globalToLocal(self.pos)
+        self.rect = pg.Rect(local_coord[0], local_coord[1], self.rect[2], self.rect[3])
 
 class Platform(pg.sprite.Sprite):
     images = []
@@ -511,7 +515,7 @@ def main(winstyle=0):
     PureImage.images = [utils.load_image(im) for im in ["ready.png", "over.png", "win.png", "transparent.png"]]
     for i in range(len(PureImage.images)):
         PureImage.images[i] = pg.transform.scale(PureImage.images[i], Size_GameStatusImage)
-    PureImage.images.append(utils.load_image("Final_Background.png"))
+    PureImage.images.append(pg.transform.scale(utils.load_image("Final_Background.png"), Size_LongBackground))
 
     filesToBeLoaded = []
     for ind in range(1, 18):
