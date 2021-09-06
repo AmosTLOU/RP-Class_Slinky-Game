@@ -23,9 +23,10 @@ if not pg.image.get_extended():
 FPS = 60
 Size_Screen = [1080, 720]
 SCREENRECT = pg.Rect(0, 0, Size_Screen[0], Size_Screen[1])
-Size_PlayerImage = [300, 300]
+Size_PlayerImage = [160, 160]
 Size_ChaserImage = [200, 200]
 Size_GameStatusImage = [450, 200]
+Size_LongBackground = [3635, 799]
 
 PlayIntro = False
 Len_StaticSlinky = 45           # the distance from top to bottom of the static slink
@@ -49,9 +50,9 @@ Names_Platform =     [  "6.gif",         "6.gif",      "2.gif"                  
 Positions_Platform = [  [1180, 1195],  [1308, 1195],   [1090, 940]              ]
 
 Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"     , "HoneyTrap_"     ]
-Positions_Interactable = [   [1250, 1126],  [1350, 1146],    [1450, 1100]   , [1100, 1050]     ]
+Positions_Interactable = [   [260, 440],  [1350, 1146],    [1450, 1100]   , [1100, 1050]     ]
 
-StartPos_Player = [1220, 1190]  # pos of the slinky's bottom midpoint
+StartPos_Player = [240, 460]  # pos of the slinky's bottom midpoint
 Pos_GameStatus = [320, 200]
 Origin_Local[:] = [StartPos_Player[0]-Size_Screen[0]//2, StartPos_Player[1]-3*Size_Screen[1]//4]
 StartPos_Chaser = [Origin_Local[0] + 250, Origin_Local[1] + 250]
@@ -258,9 +259,10 @@ class Player(pg.sprite.Sprite):
             self.beingHold = True
             self.pos_top = coord_mouse[:] 
             # TODO Apply the image according to (x, y)   which is the relative distance
-            x_to_scale = round(abs(x)//4)
-            y_to_scale = round(abs(y)//8)
-            img = self.images[min(19+y_to_scale, 24)] if y < 0 else self.images[min(x_to_scale, 18)]
+            x_to_scale = round(abs(x)//3)
+            # y_to_scale = round(abs(y)//8)
+            # img = self.images[min(19+y_to_scale, 24)] if y < 0 else self.images[min(x_to_scale, 18)]
+            img = self.images[min(x_to_scale, 16)]
             if x > 0:
                 dir_markPoint = 1
                 self.image = self.assignImage(img)
@@ -335,6 +337,10 @@ class Player(pg.sprite.Sprite):
                 s = Speed_Camera if self.shift_dst[i] > Speed_Camera else self.shift_dst[i]
                 Origin_Local[i] += s if self.shift_dir[i] > 0 else -s
                 self.shift_dst[i] -= s
+            Origin_Local[0] = max(Origin_Local[0], 0)
+            Origin_Local[0] = min(Origin_Local[0], Size_LongBackground[0]-Size_Screen[0])
+            Origin_Local[1] = max(Origin_Local[1], 0)
+            Origin_Local[1] = min(Origin_Local[1], Size_LongBackground[1]-Size_Screen[1])
         if self.beingStuck:
             self.getStuck()
         if self.getPower:
@@ -430,13 +436,13 @@ class Chaser(pg.sprite.Sprite):
                     item.kill()
 
     def getFrozen(self):
+        self.image = pg.transform.scale(utils.load_image("cat\\cat_frozen.png"), Size_ChaserImage)
         f = round(Time_Chaser_Frozen * FPS)
         self.frozen_frame += 1
         if f == self.frozen_frame:
             self.frozen_frame = 0
             self.frozen = False
-            # TODO
-            # self.image = 
+            
 
     def update(self):
         if not self.frozen:
@@ -464,11 +470,14 @@ class Timer():
     def timerDisplay(self):
         self.minutes = self.total_seconds // 60
         self.seconds = self.total_seconds % 60
-        output_string = "Time: {0:02}:{1:02}".format(
-            self.minutes, self.seconds)
+        output_string = "Time: {0:02}:{1:02}".format(self.minutes, self.seconds)
+        score_output_string = "Score: {0:04}".format(self.total_seconds*10)
         text = self.font.render(output_string, True, (0, 0, 0))
+        score_text = self.font.render(score_output_string, True, (0, 0, 0))
+        
         # return text
         screen.blit(text, (50, 50))
+        screen.blit(score_text, (750, 50))
 
     def timerUpdate(self):
         self.total_seconds = self.frame_count // FPS
@@ -502,12 +511,13 @@ def main(winstyle=0):
     PureImage.images = [utils.load_image(im) for im in ["ready.png", "over.png", "win.png", "transparent.png"]]
     for i in range(len(PureImage.images)):
         PureImage.images[i] = pg.transform.scale(PureImage.images[i], Size_GameStatusImage)
+    PureImage.images.append(utils.load_image("Final_Background.png"))
 
     filesToBeLoaded = []
-    # for ind in range(1, 18):
-    #     filesToBeLoaded.append("slinky_17\\slinky (" + str(ind) + ").png")
-    for ind in range(1, 26):
-        filesToBeLoaded.append("slinky\\var 1\\1 (" + str(ind) + ").png")
+    for ind in range(1, 18):
+        filesToBeLoaded.append("slinky_17\\slinky (" + str(ind) + ").png")
+    # for ind in range(1, 26):
+    #     filesToBeLoaded.append("slinky\\var 1\\1 (" + str(ind) + ").png")
     Player.images = [utils.load_image(im) for im in filesToBeLoaded]
     for i in range(len(Player.images)):
         Player.images[i] = pg.transform.scale(Player.images[i], Size_PlayerImage)
@@ -584,6 +594,9 @@ def main(winstyle=0):
     dct["ToyChest"] = 3
         
     for round in range(100):
+        long_background = PureImage()
+        long_background.image = PureImage.images[4]
+        long_background.rect = long_background.image.get_rect()
         flag = True
         player = Player()
         timer = Timer()
@@ -669,7 +682,7 @@ def main(winstyle=0):
             dirty = all.draw(screen)
             # pg.display.update(dirty)
             pg.display.update()
-
+            
             # set the framerate
             clock.tick(FPS)
 
