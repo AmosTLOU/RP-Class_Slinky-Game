@@ -251,7 +251,7 @@ class Music():
         self.sfx[ind].play()
 
 
-class Timer():
+class TimerAndScore():
     def __init__(self):
         self.frame_count = 0
         # self.total_seconds = self.start_time - (self.frame_count // FPS)
@@ -260,15 +260,20 @@ class Timer():
         # initialize fonts
         self.font = pg.font.Font(None, 50)
 
-    def timerDisplay(self):
+    def timerAndScoreDisplay(self):
         self.minutes = self.total_seconds // 60
         self.seconds = self.total_seconds % 60
-        output_string = "Time: {0:02}:{1:02}".format(
+        time_output_string = "Time: {0:02}:{1:02}".format(
             self.minutes, self.seconds)
-        print(output_string)
-        text = self.font.render(output_string, True, (0, 0, 0))
+        score_output_string = "Score: {0:04}".format(self.total_seconds*10)
+        print(score_output_string)
+        print(time_output_string)
+        time_text = self.font.render(time_output_string, True, (0, 0, 0))
+        score_text = self.font.render(score_output_string, True, (0, 0, 0))
+
         # return text
-        screen.blit(text, (50, 50))
+        screen.blit(time_text, (50, 50))
+        screen.blit(score_text, (750, 50))
 
     def timerUpdate(self):
         self.total_seconds = START_TIME - (self.frame_count // FPS)
@@ -392,7 +397,7 @@ def main(winstyle=0):
         Instances_platform[i].setColliderBoxes(thickness)
 
     # timer
-    timer = Timer()
+    timer = TimerAndScore()
 
     # Run our main loop whilst the player is alive.
     while player.alive():
@@ -446,8 +451,8 @@ def main(winstyle=0):
         #     player.land(platform.rect)
 
         # draw the scene
-        screen.blit(background, (0,0))
-        timer.timerDisplay()
+        screen.blit(background, (0, 0))
+        timer.timerAndScoreDisplay()
         dirty = all.draw(screen)
         # pg.display.update(dirty)
         pg.display.update()
