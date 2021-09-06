@@ -23,11 +23,11 @@ if not pg.image.get_extended():
 FPS = 60
 Size_Screen = [1080, 720]
 SCREENRECT = pg.Rect(0, 0, Size_Screen[0], Size_Screen[1])
-Size_PlayerImage = [160, 160]
+Size_PlayerImage = [300, 300]
 Size_ChaserImage = [200, 200]
 Size_GameStatusImage = [450, 200]
 
-PlayIntro = True
+PlayIntro = False
 Len_StaticSlinky = 45           # the distance from top to bottom of the static slink
 Longest_StretchDst = 100        # better not changed, or the movement would look anti-intuitive
 LeastDst_DragPlayer = 35 
@@ -181,7 +181,7 @@ class Interactable(pg.sprite.Sprite):
                 self.transparent = not self.transparent
             if self.life_time <= 0:
                 self.enable = False
-                self.image = utils.load_image("transparent.png")
+                self.kill()
         local_coord = globalToLocal(self.pos)
         self.rect = pg.Rect(local_coord[0], local_coord[1], self.size[0], self.size[1])
 
@@ -258,18 +258,15 @@ class Player(pg.sprite.Sprite):
             self.beingHold = True
             self.pos_top = coord_mouse[:] 
             # TODO Apply the image according to (x, y)   which is the relative distance
-            x_to_scale = round(abs(x)//3)
-            num_pics = 17
+            x_to_scale = round(abs(x)//4)
+            y_to_scale = round(abs(y)//8)
+            img = self.images[min(19+y_to_scale, 24)] if y < 0 else self.images[min(x_to_scale, 18)]
             if x > 0:
                 dir_markPoint = 1
-                self.image = self.assignImage(self.images[min(x_to_scale, num_pics-1)])
-                if y < 0:
-                    TODO = 1
+                self.image = self.assignImage(img)
             else:
                 dir_markPoint = 0
-                self.image = self.assignImage(pg.transform.flip(self.images[min(x_to_scale, num_pics-1)], 1, 0))
-                if y < 0:
-                    TODO = 1
+                self.image = self.assignImage(pg.transform.flip(img, 1, 0))
             self.markPoint.pos = self.pos_top[:]
             self.markPoint.adjustImage(self.angle, dir_markPoint)
             for item in Instances_interactable:
@@ -374,6 +371,8 @@ class MarkPoint(pg.sprite.Sprite):
         
     def update(self):
         local_coord = globalToLocal(self.pos)
+        if GameWin[0]:
+            self.image = pg.transform.scale(utils.load_image("happy face.png"), [70, 70])
         if GameOver[0] or self.inTrouble:
             self.getIntoTrouble()
             self.rect = pg.Rect(local_coord[0]-70, local_coord[1]-70, self.rect[2], self.rect[3])
@@ -426,6 +425,9 @@ class Chaser(pg.sprite.Sprite):
                     self.just_hit_platform = True
                     p.getHit()
                     return
+            for item in Instances_interactable:
+                if alg.intersected_BoxBox(box, item.box):
+                    item.kill()
 
     def getFrozen(self):
         f = round(Time_Chaser_Frozen * FPS)
@@ -480,8 +482,10 @@ def main(winstyle=0):
         PureImage.images[i] = pg.transform.scale(PureImage.images[i], Size_GameStatusImage)
 
     filesToBeLoaded = []
-    for ind in range(1, 18):
-        filesToBeLoaded.append("slinky_17\\slinky (" + str(ind) + ").png")
+    # for ind in range(1, 18):
+    #     filesToBeLoaded.append("slinky_17\\slinky (" + str(ind) + ").png")
+    for ind in range(1, 26):
+        filesToBeLoaded.append("slinky\\var 1\\1 (" + str(ind) + ").png")
     Player.images = [utils.load_image(im) for im in filesToBeLoaded]
     for i in range(len(Player.images)):
         Player.images[i] = pg.transform.scale(Player.images[i], Size_PlayerImage)
