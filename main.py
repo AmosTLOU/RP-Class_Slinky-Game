@@ -2,7 +2,7 @@ import os
 import math
 import random
 import pygame as pg
-from moviepy.editor import VideoFileClip
+#from moviepy.editor import VideoFileClip
 import utils
 import algebra as alg
 
@@ -28,9 +28,9 @@ Size_ChaserImage = [200, 200]
 Size_GameStatusImage = [450, 200]
 Size_LongBackground = [3635, 799]
 
-PlayIntro = True
+PlayIntro = False
 Len_StaticSlinky = 45           # the distance from top to bottom of the static slink
-Longest_StretchDst = 100        # better not changed, or the movement would look anti-intuitive
+Longest_StretchDst = 125        # better not changed, or the movement would look anti-intuitive
 LeastDst_DragPlayer = 35 
 LeastDst_LandPlayer = 30
 Speed_Camera = 7                # pixels per frame
@@ -42,18 +42,17 @@ Time_Chaser_Frozen = 2          # how long chaser would be frozen
 Time_Player_Stuck = 2           # how long player would be stuck
 Time_PlayerGetPower = 5         # how long player get power
 
-# ImgName_bg = "background.jpg"
 ImgName_bg = "transparent.png"
 MusicName_bg = "nervous.mp3"
 Imagefiles_item = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif"]
 
-Names_Platform =     [  "6.gif",         "6.gif",      "2.gif"                  ]
-Positions_Platform = [  [240, 460],  [1308, 1195],   [1090, 940]              ]
+Names_Platform =     [  "6.gif",         "6.gif",      "2.gif"    ,  "2.gif" ,    "2.gif"   ,  "4.gif",    "1.gif",      "2.gif" ,  "4.gif"]
+Positions_Platform = [  [1180, 1195],  [1308, 1195],   [606, 552] ,  [597, 616]  , [661, 616], [737, 424],  [978, 379],  [240, 450], [379, 424]]
 
-Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"     , "HoneyTrap_"     ]
-Positions_Interactable = [   [260, 440],  [1350, 1146],    [1450, 1100]   , [1100, 1050]     ]
+Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"     , "HoneyTrap_"    ]
+Positions_Interactable = [   [260, 440],  [1350, 1146],    [1450, 1100]   , [1100, 1050]   ]
 
-StartPos_Player = [240, 460]  # pos of the slinky's bottom midpoint
+StartPos_Player = [240, 450]  # pos of the slinky's bottom midpoint
 Pos_GameStatus = [320, 200]
 Origin_Local[:] = [StartPos_Player[0]-Size_Screen[0]//2, StartPos_Player[1]-3*Size_Screen[1]//4]
 StartPos_Chaser = [Origin_Local[0] + 250, Origin_Local[1] + 250]
@@ -70,8 +69,7 @@ def localToGlobal(coord_local):
 
 
 
-class PureImage(
-    pg.sprite.Sprite):
+class PureImage(pg.sprite.Sprite):
     images = []
 
     def __init__(self):
@@ -345,10 +343,7 @@ class Player(pg.sprite.Sprite):
                 s = Speed_Camera if self.shift_dst[i] > Speed_Camera else self.shift_dst[i]
                 Origin_Local[i] += s if self.shift_dir[i] > 0 else -s
                 self.shift_dst[i] -= s
-            # Origin_Local[0] = max(Origin_Local[0], 0)
-            # Origin_Local[0] = min(Origin_Local[0], Size_LongBackground[0]-Size_Screen[0])
-            # Origin_Local[1] = max(Origin_Local[1], 0)
-            # Origin_Local[1] = min(Origin_Local[1], Size_LongBackground[1]-Size_Screen[1])
+            
         if self.beingStuck:
             self.getStuck()
         if self.getPower:
