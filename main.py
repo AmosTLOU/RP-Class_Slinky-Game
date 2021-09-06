@@ -28,7 +28,7 @@ Size_ChaserImage = [200, 200]
 Size_GameStatusImage = [450, 200]
 Size_LongBackground = [3635, 799]
 
-PlayIntro = False
+PlayIntro = True
 Len_StaticSlinky = 45           # the distance from top to bottom of the static slink
 Longest_StretchDst = 100        # better not changed, or the movement would look anti-intuitive
 LeastDst_DragPlayer = 35 
@@ -42,7 +42,8 @@ Time_Chaser_Frozen = 2          # how long chaser would be frozen
 Time_Player_Stuck = 2           # how long player would be stuck
 Time_PlayerGetPower = 5         # how long player get power
 
-ImgName_bg = "background.jpg"
+# ImgName_bg = "background.jpg"
+ImgName_bg = "transparent.png"
 MusicName_bg = "nervous.mp3"
 Imagefiles_item = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif"]
 
@@ -69,7 +70,8 @@ def localToGlobal(coord_local):
 
 
 
-class PureImage(pg.sprite.Sprite):
+class PureImage(
+    pg.sprite.Sprite):
     images = []
 
     def __init__(self):
@@ -77,10 +79,12 @@ class PureImage(pg.sprite.Sprite):
         self.image = self.images[0]
         self.rect = self.image.get_rect()
         self.pos = [0, 0]
+        self.type = 0
 
     def update(self):
-        local_coord = globalToLocal(self.pos)
-        self.rect = pg.Rect(local_coord[0], local_coord[1], self.rect[2], self.rect[3])
+        if self.type != 0:
+            local_coord = globalToLocal(self.pos)
+            self.rect = pg.Rect(local_coord[0], local_coord[1], self.rect[2], self.rect[3])
 
 class Platform(pg.sprite.Sprite):
     images = []
@@ -341,10 +345,10 @@ class Player(pg.sprite.Sprite):
                 s = Speed_Camera if self.shift_dst[i] > Speed_Camera else self.shift_dst[i]
                 Origin_Local[i] += s if self.shift_dir[i] > 0 else -s
                 self.shift_dst[i] -= s
-            Origin_Local[0] = max(Origin_Local[0], 0)
-            Origin_Local[0] = min(Origin_Local[0], Size_LongBackground[0]-Size_Screen[0])
-            Origin_Local[1] = max(Origin_Local[1], 0)
-            Origin_Local[1] = min(Origin_Local[1], Size_LongBackground[1]-Size_Screen[1])
+            # Origin_Local[0] = max(Origin_Local[0], 0)
+            # Origin_Local[0] = min(Origin_Local[0], Size_LongBackground[0]-Size_Screen[0])
+            # Origin_Local[1] = max(Origin_Local[1], 0)
+            # Origin_Local[1] = min(Origin_Local[1], Size_LongBackground[1]-Size_Screen[1])
         if self.beingStuck:
             self.getStuck()
         if self.getPower:
@@ -599,6 +603,7 @@ def main(winstyle=0):
         
     for round in range(100):
         long_background = PureImage()
+        long_background.type = 1
         long_background.image = PureImage.images[4]
         long_background.rect = long_background.image.get_rect()
         flag = True
