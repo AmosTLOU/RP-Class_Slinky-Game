@@ -54,7 +54,7 @@ Positions_Interactable = [   [1250, 1126],  [1350, 1146],    [1450, 1100]   , [1
 StartPos_Player = [1220, 1190]  # pos of the slinky's bottom midpoint
 Pos_GameStatus = [320, 200]
 Origin_Local[:] = [StartPos_Player[0]-Size_Screen[0]//2, StartPos_Player[1]-3*Size_Screen[1]//4]
-
+StartPos_Chaser = [Origin_Local[0] + 250, Origin_Local[1] + 250]
 
 
 
@@ -387,7 +387,7 @@ class Chaser(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0]
         self.rect = self.image.get_rect()
-        self.pos = [Origin_Local[0] + 100, Origin_Local[1] + 100]
+        self.pos = StartPos_Chaser[:]
         self.size = [self.rect[2], self.rect[3]]
         self.cycle = len(self.images)
         self.index_in_cycle = 0
@@ -451,6 +451,28 @@ class Chaser(pg.sprite.Sprite):
         local_coord = globalToLocal(self.pos)
         self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
 
+
+class Timer():
+    def __init__(self):
+        self.frame_count = 0
+        self.minutes = 0
+        self.seconds = 0
+        self.total_seconds = 0
+        # initialize fonts
+        self.font = pg.font.Font(None, 50)
+
+    def timerDisplay(self):
+        self.minutes = self.total_seconds // 60
+        self.seconds = self.total_seconds % 60
+        output_string = "Time: {0:02}:{1:02}".format(
+            self.minutes, self.seconds)
+        text = self.font.render(output_string, True, (0, 0, 0))
+        # return text
+        screen.blit(text, (50, 50))
+
+    def timerUpdate(self):
+        self.total_seconds = self.frame_count // FPS
+        self.frame_count += 1
 
 
 pg.init()
@@ -564,6 +586,7 @@ def main(winstyle=0):
     for round in range(100):
         flag = True
         player = Player()
+        timer = Timer()
         player.sfx = sfx_player
         for i in range(len(Names_Platform)):
             Instances_platform.append(Platform()) 
@@ -618,7 +641,7 @@ def main(winstyle=0):
                         gameStatusDisplay.kill()
                         flag = False
                     break
-                
+
                 # get mouse input:
                 mouse_1_hold = pg.mouse.get_pressed(3)[0]
                 if mouse_1_hold:
@@ -639,8 +662,13 @@ def main(winstyle=0):
             all.update()
 
             # draw the scene
+            screen.blit(background, (0,0))
+            if not GameReady[0] and not GameOver[0] and not GameWin[0]:
+                timer.timerUpdate()
+            timer.timerDisplay()
             dirty = all.draw(screen)
-            pg.display.update(dirty)
+            # pg.display.update(dirty)
+            pg.display.update()
 
             # set the framerate
             clock.tick(FPS)
