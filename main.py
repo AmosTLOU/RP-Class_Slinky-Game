@@ -39,7 +39,7 @@ LeastDst_DragPlayer = 35
 LeastDst_LandPlayer = 30
 Speed_Camera = 7                # pixels per frame
 Time_ChaserMove = 0.05          # how long cat should wait for next move
-Step_ChaserForward = 2          
+Step_ChaserForward = 5          
 Step_ChaserBackward = 30        # when cat bounces off the obstacle, how many pixels does it back off
 Time_ChaserFramePlay = 0.1      # how long one chaser frame would play
 Time_Chaser_Frozen = 2          # how long chaser would be frozen
@@ -552,7 +552,7 @@ def main(winstyle=0):
     pg.display.set_caption("Slinky Game")
     
     if PlayIntro:
-        clip = VideoFileClip(main_dir + "\\data\\SLINKY INTRO.mp4")
+        clip = VideoFileClip(main_dir + "\\data\\SLINKY INTRO.wmv")
         clip.preview()
     
     # create the background, tile the bgd image
