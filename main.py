@@ -26,11 +26,11 @@ SCREENRECT = pg.Rect(0, 0, Size_Screen[0], Size_Screen[1])
 Size_PlayerImage = [160, 160]
 Size_ChaserImage = [200, 200]
 Size_GameStatusImage = [450, 200]
-Size_LongBackground = [3635, 799]
+Size_LongBackground = [2424, 480]
 
 PlayIntro = False
 Len_StaticSlinky = 45           # the distance from top to bottom of the static slink
-Longest_StretchDst = 125        # better not changed, or the movement would look anti-intuitive
+Longest_StretchDst = 118        # better not changed, or the movement would look anti-intuitive
 LeastDst_DragPlayer = 35        
 LeastDst_LandPlayer = 30
 Speed_Camera = 7                # pixels per frame
@@ -44,15 +44,15 @@ Time_PlayerGetPower = 5         # how long player get power
 
 ImgName_bg = "transparent.png"
 MusicName_bg = "nervous.mp3"
-Imagefiles_item = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif", "7.gif"]
+Imagefiles_item = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif", "7.gif", "Hitbox_Car_Roof.png", "Hitbox_Car_Hood.png" , "Hitbox_Wrench.png" , "Hitbox_Drill.png" , "Hitbox_Pliers.png" , "Hitbox_L_Curtain.png" , "Hitbox_Top_Curtain.png" , "Hitbox_R_Curtain.png" , "Hitbox_Bed.png"]
 
-Names_Platform =     [  "6.gif",         "6.gif",        "2.gif",      "2.gif" ,    "2.gif",     "4.gif",   "1.gif",      "2.gif" ,   "4.gif"  ]
-Positions_Platform = [  [1180, 1195],  [1308, 1195],   [606, 552] ,  [597, 616]  , [661, 616], [737, 424],  [978, 379],  [240, 450], [379, 424] ]
+Names_Platform =     [  "2.gif",         "2.gif",        "2.gif",   "Hitbox_Car_Roof.png" ,    "Hitbox_Car_Hood.png",     "2.gif",       "2.gif",      "2.gif" ,   "Hitbox_Wrench.png" ,        "4.gif" ,      "Hitbox_Drill.png" , "Hitbox_Pliers.png" ,       "4.gif" ,        "1.gif"  ,         "6.gif" ,       "6.gif" ,       "3.gif" ,        "3.gif" ,    "Hitbox_L_Curtain.png" , "Hitbox_Top_Curtain.png" , "Hitbox_R_Curtain.png" , "Hitbox_Top_Curtain.png" , "7.gif" ,     "4.gif" ,       "4.gif" ,       "7.gif" ,        "7.gif" ,           "6.gif" ,       "6.gif" ,       "6.gif" ,      "5.gif" ,       "3.gif" ,       "3.gif" ,       "1.gif" ,  "Hitbox_Bed.png"]
+Positions_Platform = [  [-115, 391],  [-31, 391],        [-15, 328] ,     [80, 318]  ,                [253, 372],           [380, 391],  [401, 327],  [375, 267],    [72, 129] ,             [412, 99] ,            [150, 148] ,         [304, 141] ,           [618, 99]  ,  [594, 266] ,          [618, 329] ,      [618, 393] ,   [746, 329] ,  [746, 393] ,      [853, 146] ,           [853, 136] ,               [1097, 146] ,                [853, 336] ,         [1260, 176] , [1388, 35] , [1624, 35] ,        [1752, 176] ,    [1816, 176] ,       [1420, 328] , [1420, 392] , [1752, 392] ,      [1420, 266] ,     [1356, 328] , [1356, 393] ,   [1989, 391] , [2056, 352] ]
 
-Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"     , "HoneyTrap_"    ]
-Positions_Interactable = [   [260, 440],  [1350, 1146],    [1450, 1100]   , [1100, 1050]   ]
+Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"      ]
+Positions_Interactable = [   [130, 260],  [665, 290],    [2138, 260]     ]
 
-StartPos_Player = [240, 450]  # pos of the slinky's bottom midpoint
+StartPos_Player = [-190, 445]  # pos of the slinky's bottom midpoint
 Pos_GameStatus = [320, 200]
 Origin_Local[:] = [StartPos_Player[0]-Size_Screen[0]//2, StartPos_Player[1]-3*Size_Screen[1]//4]
 StartPos_Chaser = [Origin_Local[0] + 250, Origin_Local[1] + 250]
