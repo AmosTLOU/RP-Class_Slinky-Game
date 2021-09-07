@@ -44,10 +44,10 @@ Time_PlayerGetPower = 5         # how long player get power
 
 ImgName_bg = "transparent.png"
 MusicName_bg = "nervous.mp3"
-Imagefiles_item = ["1", "2", "3", "4", "5", "6", "7"]
+Imagefiles_item = ["1.gif", "2.gif", "3.gif", "4.gif", "5.gif", "6.gif", "7.gif"]
 
-Names_Platform =     [  "6",                "6",        "2"    ,      "2" ,           "2"   ,       "4",         "1",      "2" ,       "4"]
-Positions_Platform = [  [1180, 1195],  [1308, 1195],   [606, 552] ,  [597, 616]  , [661, 616], [737, 424],  [978, 379],  [240, 450], [379, 424]]
+Names_Platform =     [  "6.gif",         "6.gif",        "2.gif",      "2.gif" ,    "2.gif",     "4.gif",   "1.gif",      "2.gif" ,   "4.gif"  ]
+Positions_Platform = [  [1180, 1195],  [1308, 1195],   [606, 552] ,  [597, 616]  , [661, 616], [737, 424],  [978, 379],  [240, 450], [379, 424] ]
 
 Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"     , "HoneyTrap_"    ]
 Positions_Interactable = [   [260, 440],  [1350, 1146],    [1450, 1100]   , [1100, 1050]   ]
@@ -526,8 +526,8 @@ def main(winstyle=0):
     filesToBeLoaded = []
     for i in range(len(Imagefiles_item)):
         filesToBeLoaded.append("item\\" + Imagefiles_item[i])
-    Platform.images = [utils.load_image(im + ".gif") for im in filesToBeLoaded]
-    Platform.imagesGetHit = [utils.load_image(im + "_.png") for im in filesToBeLoaded]
+    Platform.images = [utils.load_image(im) for im in filesToBeLoaded]
+    Platform.imagesGetHit = [utils.load_image("item\\" + str(im) + "_.png") for im in range(1, 8)]
 
     MarkPoint.images = [utils.load_image("eyes.png")]
     MarkPoint.imagesStuck = [utils.load_image("eyes_0.png"), utils.load_image("eyes_1.png")]
@@ -607,7 +607,10 @@ def main(winstyle=0):
             Instances_platform.append(Platform()) 
             ind = dct[Names_Platform[i]]
             Instances_platform[i].image = Platform.images[ind]
-            Instances_platform[i].imageGetHit = Platform.imagesGetHit[ind]
+            if ind < len(Platform.imagesGetHit):
+                Instances_platform[i].imageGetHit = Platform.imagesGetHit[ind]
+            else:
+                Instances_platform[i].imageGetHit = Instances_platform[i].image
             Instances_platform[i].setPos(Positions_Platform[i][0], Positions_Platform[i][1])
             Instances_platform[i].setBoxes()       
 
