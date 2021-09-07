@@ -31,12 +31,12 @@ Size_LongBackground = [3635, 799]
 PlayIntro = False
 Len_StaticSlinky = 45           # the distance from top to bottom of the static slink
 Longest_StretchDst = 125        # better not changed, or the movement would look anti-intuitive
-LeastDst_DragPlayer = 35 
+LeastDst_DragPlayer = 35        
 LeastDst_LandPlayer = 30
 Speed_Camera = 7                # pixels per frame
 Time_ChaserMove = 0.05          # how long cat should wait for next move
-Step_ChaserForward = 2         # when cat bounces off the obstacle, how many pixels does it back off
-Step_ChaserBackward = 20         # when cat bounces off the obstacle, how many pixels does it back off
+Step_ChaserForward = 2          
+Step_ChaserBackward = 20        # when cat bounces off the obstacle, how many pixels does it back off
 Time_ChaserFramePlay = 0.1      # how long one chaser frame would play
 Time_Chaser_Frozen = 2          # how long chaser would be frozen
 Time_Player_Stuck = 2           # how long player would be stuck
@@ -462,6 +462,8 @@ class Chaser(pg.sprite.Sprite):
 
 
 class Timer():
+    player = None
+
     def __init__(self):
         self.frame_count = 0
         self.minutes = 0
@@ -474,10 +476,9 @@ class Timer():
         self.minutes = self.total_seconds // 60
         self.seconds = self.total_seconds % 60
         output_string = "Time: {0:02}:{1:02}".format(self.minutes, self.seconds)
-        score_output_string = "Score: {0:04}".format(self.total_seconds*10)
-        text = self.font.render(output_string, True, (0, 0, 0))
-        score_text = self.font.render(score_output_string, True, (0, 0, 0))
-        
+        score_output_string = "Score: {0:04}".format(round(self.total_seconds*5 + alg.e_dst(self.player.pos_bottom, StartPos_Player)//10))
+        text = self.font.render(output_string, True, (255, 51, 51))
+        score_text = self.font.render(score_output_string, True, (51, 51, 255))
         # return text
         screen.blit(text, (50, 50))
         screen.blit(score_text, (750, 50))
@@ -604,6 +605,7 @@ def main(winstyle=0):
         flag = True
         player = Player()
         timer = Timer()
+        timer.player = player
         player.sfx = sfx_player
         for i in range(len(Names_Platform)):
             Instances_platform.append(Platform()) 
@@ -679,11 +681,11 @@ def main(winstyle=0):
             all.update()
 
             # draw the scene
-            screen.blit(background, (0,0))
             if not GameReady[0] and not GameOver[0] and not GameWin[0]:
                 timer.timerUpdate()
-            timer.timerDisplay()
+            screen.blit(background, (0,0))
             dirty = all.draw(screen)
+            timer.timerDisplay()
             # pg.display.update(dirty)
             pg.display.update()
             
