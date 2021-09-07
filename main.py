@@ -36,7 +36,7 @@ LeastDst_LandPlayer = 30
 Speed_Camera = 7                # pixels per frame
 Time_ChaserMove = 0.05          # how long cat should wait for next move
 Step_ChaserForward = 2          
-Step_ChaserBackward = 20        # when cat bounces off the obstacle, how many pixels does it back off
+Step_ChaserBackward = 30        # when cat bounces off the obstacle, how many pixels does it back off
 Time_ChaserFramePlay = 0.1      # how long one chaser frame would play
 Time_Chaser_Frozen = 2          # how long chaser would be frozen
 Time_Player_Stuck = 2           # how long player would be stuck
@@ -83,6 +83,7 @@ class PureImage(pg.sprite.Sprite):
         if self.type != 0:
             local_coord = globalToLocal(self.pos)
             self.rect = pg.Rect(local_coord[0], local_coord[1], self.rect[2], self.rect[3])
+
 
 class Platform(pg.sprite.Sprite):
     images = []
@@ -211,8 +212,8 @@ class Player(pg.sprite.Sprite):
         self.beingHold = False
         self.beingStuck = False
         self.stuck_frame = 0
-        self.getPower = False
-        self.power_frame = 0
+        # self.getPower = False
+        # self.power_frame = 0
         self.platform = None
     
     def getTop(self):
@@ -246,10 +247,9 @@ class Player(pg.sprite.Sprite):
         self.markPoint.adjustImage(self.angle)
         self.beingHold = False
 
-
     def drag(self, coord_mouse): 
         coord_mouse = localToGlobal(coord_mouse)
-        if GameOver[0] or self.beingStuck or alg.e_dst(self.pos_top, coord_mouse) > LeastDst_DragPlayer :  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
+        if self.beingStuck or alg.e_dst(self.pos_top, coord_mouse) > LeastDst_DragPlayer :  # if the mouse was too far from the top-end, then the slinky couldn't be dragged
             return
         if not self.beingHold:  # if it was the first mouse click on slinky and the mouse was in the range of any collider box, then do nothing
             for p in Instances_platform:
@@ -309,7 +309,6 @@ class Player(pg.sprite.Sprite):
         elif self.angle == 270:
             self.pos_top[0] -= bias
         self.shift_dst[0], self.shift_dst[1] = abs(self.pos_top[0] - self.pos_bottom[0]), abs(self.pos_top[1] - self.pos_bottom[1])
-        self.shift_axis_further = 0 if self.shift_dst[0] >= self.shift_dst[1] else 1
         self.shift_dir[0] = 1 if (self.pos_top[0] - self.pos_bottom[0]) > 0 else -1
         self.shift_dir[1] = 1 if (self.pos_top[1] - self.pos_bottom[1]) > 0 else -1
         self.pos_bottom = self.pos_top[:]
@@ -325,12 +324,12 @@ class Player(pg.sprite.Sprite):
             self.beingStuck = False
             self.markPoint.inTrouble = False
     
-    def PowerCountDown(self):
-        self.power_frame += 1
-        f = round(Time_PlayerGetPower * FPS)
-        if f == self.power_frame:
-            self.power_frame = 0
-            self.getPower = False
+    # def PowerCountDown(self):
+    #     self.power_frame += 1
+    #     f = round(Time_PlayerGetPower * FPS)
+    #     if f == self.power_frame:
+    #         self.power_frame = 0
+    #         self.getPower = False
 
 
     def update(self):
@@ -343,11 +342,10 @@ class Player(pg.sprite.Sprite):
                 s = Speed_Camera if self.shift_dst[i] > Speed_Camera else self.shift_dst[i]
                 Origin_Local[i] += s if self.shift_dir[i] > 0 else -s
                 self.shift_dst[i] -= s
-            
         if self.beingStuck:
             self.getStuck()
-        if self.getPower:
-            self.PowerCountDown()
+        # if self.getPower:
+        #     self.PowerCountDown()
         self.markPoint.pos = self.pos_top[:]
         local_coord = globalToLocal(self.pos_bottom)
         self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
@@ -416,8 +414,8 @@ class Chaser(pg.sprite.Sprite):
             elif self.prey.pos_bottom[i] - self.pos[i] < 0:
                 potential_move[i] = -Step_ChaserForward
         if self.just_hit_platform:
-            self.pos[0] -= Step_ChaserBackward * potential_move[0]
-            self.pos[1] -= Step_ChaserBackward * potential_move[1]
+            self.pos[0] -= Step_ChaserBackward * 1 if potential_move[0] > 0 else -1
+            self.pos[1] -= Step_ChaserBackward * 1 if potential_move[1] > 0 else -1
             self.just_hit_platform = False
         else:
             f = round(Time_ChaserMove * FPS)
@@ -446,7 +444,6 @@ class Chaser(pg.sprite.Sprite):
             self.frozen_frame = 0
             self.frozen = False
             
-
     def update(self):
         if not self.frozen:
             self.frame_cnt += 1
@@ -574,7 +571,6 @@ def main(winstyle=0):
     # all = pg.sprite.RenderUpdates()
     all = pg.sprite.OrderedUpdates()
     
-
     # assign default groups to each sprite class
     PureImage.containers = all
     Platform.containers = all
@@ -684,7 +680,7 @@ def main(winstyle=0):
             if not GameReady[0] and not GameOver[0] and not GameWin[0]:
                 timer.timerUpdate()
             screen.blit(background, (0,0))
-            dirty = all.draw(screen)
+            dirty = all.draw(screen)  # can't be deleted!
             timer.timerDisplay()
             # pg.display.update(dirty)
             pg.display.update()
