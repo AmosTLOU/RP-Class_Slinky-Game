@@ -1,8 +1,9 @@
+import sys
 import os
 import math
 import random
 import pygame as pg
-# from moviepy.editor import VideoFileClip
+from moviepy.editor import VideoFileClip
 import utils
 import algebra as alg
 
@@ -29,6 +30,9 @@ Size_GameStatusImage = [450, 200]
 Size_LongBackground = [2424, 480]
 
 PlayIntro = False
+if len(sys.argv) > 1:
+    str_cmd = sys.argv[1]
+    PlayIntro = True if str_cmd == "True" or str_cmd == "true" or str_cmd == "T" or str_cmd == "t" else False
 Len_StaticSlinky = 45           # the distance from top to bottom of the static slink
 Longest_StretchDst = 118        # better not changed, or the movement would look anti-intuitive
 LeastDst_DragPlayer = 35        
@@ -50,7 +54,7 @@ Names_Platform =     [  "2.gif",         "2.gif",        "2.gif",   "Hitbox_Car_
 Positions_Platform = [  [-115, 391],  [-31, 391],        [-15, 328] ,     [80, 318]  ,                [253, 372],           [380, 391],  [401, 327],  [375, 267],    [72, 129] ,             [412, 99] ,            [150, 148] ,         [304, 141] ,           [618, 99]  ,  [594, 266] ,          [618, 329] ,      [618, 393] ,   [746, 329] ,  [746, 393] ,      [853, 146] ,           [853, 136] ,               [1097, 146] ,                [853, 336] ,         [1260, 176] , [1388, 35] , [1624, 35] ,        [1752, 176] ,    [1816, 176] ,       [1420, 328] , [1420, 392] , [1752, 392] ,      [1420, 266] ,     [1356, 328] , [1356, 393] ,   [1989, 391] , [2056, 352] ]
 
 Names_Interactable =  [  "StopWatch",       "HoneyTrap",    "ToyChest"      ]
-Positions_Interactable = [   [130, 260],  [665, 290],    [2138, 260]     ]
+Positions_Interactable = [   [130, 260],  [665, 290],    [2185, 260]     ]
 
 StartPos_Player = [-190, 445]  # pos of the slinky's bottom midpoint
 Pos_GameStatus = [320, 200]
