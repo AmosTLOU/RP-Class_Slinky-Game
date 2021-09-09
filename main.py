@@ -3,7 +3,7 @@ import os
 import math
 import random
 import pygame as pg
-from moviepy.editor import VideoFileClip
+# from moviepy.editor import VideoFileClip
 import utils
 import algebra as alg
 
@@ -441,7 +441,7 @@ class Chaser(pg.sprite.Sprite):
                     item.kill()
 
     def getFrozen(self):
-        self.image = pg.transform.scale(utils.load_image("cat\\cat_frozen.png"), Size_ChaserImage)
+        self.image = pg.transform.scale(utils.load_image("cat_frozen.png"), Size_ChaserImage)
         f = round(Time_Chaser_Frozen * FPS)
         self.frozen_frame += 1
         if f == self.frozen_frame:
@@ -462,31 +462,32 @@ class Chaser(pg.sprite.Sprite):
         self.rect = pg.Rect(local_coord[0]-self.size[0]//2, local_coord[1]-self.size[1]//2, self.rect[2], self.rect[3])
 
 
-class Timer():
-    player = None
+# class Timer():
+#     player = None
 
-    def __init__(self):
-        self.frame_count = 0
-        self.minutes = 0
-        self.seconds = 0
-        self.total_seconds = 0
-        # initialize fonts
-        self.font = pg.font.Font(None, 50)
+#     def __init__(self):
+#         self.frame_count = 0
+#         self.minutes = 0
+#         self.seconds = 0
+#         self.total_seconds = 0
+#         # initialize fonts
+#         self.font = pg.font.Font(None, 50)
+#         # self.font = None
 
-    def timerDisplay(self):
-        self.minutes = self.total_seconds // 60
-        self.seconds = self.total_seconds % 60
-        output_string = "Time: {0:02}:{1:02}".format(self.minutes, self.seconds)
-        score_output_string = "Score: {0:04}".format(round(self.total_seconds*5 + alg.e_dst(self.player.pos_bottom, StartPos_Player)//10))
-        text = self.font.render(output_string, True, (255, 51, 51))
-        score_text = self.font.render(score_output_string, True, (51, 51, 255))
-        # return text
-        screen.blit(text, (50, 50))
-        screen.blit(score_text, (750, 50))
+#     def timerDisplay(self):
+#         self.minutes = self.total_seconds // 60
+#         self.seconds = self.total_seconds % 60
+#         output_string = "Time: {0:02}:{1:02}".format(self.minutes, self.seconds)
+#         score_output_string = "Score: {0:04}".format(round(self.total_seconds*5 + alg.e_dst(self.player.pos_bottom, StartPos_Player)//10))
+#         text = self.font.render(output_string, True, (255, 51, 51))
+#         score_text = self.font.render(score_output_string, True, (51, 51, 255))
+#         # return text
+#         screen.blit(text, (50, 50))
+#         screen.blit(score_text, (750, 50))
 
-    def timerUpdate(self):
-        self.total_seconds = self.frame_count // FPS
-        self.frame_count += 1
+#     def timerUpdate(self):
+#         self.total_seconds = self.frame_count // FPS
+#         self.frame_count += 1
 
 
 pg.init()
@@ -520,27 +521,25 @@ def main(winstyle=0):
 
     filesToBeLoaded = []
     for ind in range(1, 18):
-        filesToBeLoaded.append("slinky_17\\slinky (" + str(ind) + ").png")
-    # for ind in range(1, 26):
-    #     filesToBeLoaded.append("slinky\\var 1\\1 (" + str(ind) + ").png")
+        filesToBeLoaded.append("slinky (" + str(ind) + ").png")
     Player.images = [utils.load_image(im) for im in filesToBeLoaded]
     for i in range(len(Player.images)):
         Player.images[i] = pg.transform.scale(Player.images[i], Size_PlayerImage)
     
     filesToBeLoaded = []
     for i in range(len(Imagefiles_item)):
-        filesToBeLoaded.append("item\\" + Imagefiles_item[i])
+        filesToBeLoaded.append(Imagefiles_item[i])
     Platform.images = [utils.load_image(im) for im in filesToBeLoaded]
-    Platform.imagesGetHit = [utils.load_image("item\\" + str(im) + "_.png") for im in range(1, 8)]
+    Platform.imagesGetHit = [utils.load_image(str(im) + "_.png") for im in range(1, 8)]
 
     MarkPoint.images = [utils.load_image("eyes.png")]
     MarkPoint.imagesStuck = [utils.load_image("eyes_0.png"), utils.load_image("eyes_1.png")]
 
-    Chaser.images = [utils.load_image(im) for im in ["cat\\cat (1).png", "cat\\cat (2).png", "cat\\cat (3).png"]]
+    Chaser.images = [utils.load_image(im) for im in ["cat (1).png", "cat (2).png", "cat (3).png"]]
     for i in range(len(Chaser.images)):
         Chaser.images[i] = pg.transform.scale(Chaser.images[i], Size_ChaserImage)
 
-    Interactable.images = [utils.load_image(im) for im in ["item\\honeytrap.png", "item\\honeytrap_.png", "item\\stopwatch.png", "item\\toy chest.png", "transparent.png"]]
+    Interactable.images = [utils.load_image(im) for im in ["honeytrap.png", "honeytrap_.png", "stopwatch.png", "toy chest.png", "transparent.png"]]
     Interactable.images[0] = pg.transform.scale(Interactable.images[0], [100, 70])
     Interactable.images[1] = pg.transform.scale(Interactable.images[1], [70, 100])
     Interactable.images[2] = pg.transform.scale(Interactable.images[2], [64, 64])
@@ -551,9 +550,9 @@ def main(winstyle=0):
     pg.display.set_icon(icon)
     pg.display.set_caption("Slinky Game")
     
-    if PlayIntro:
-        clip = VideoFileClip(main_dir + "\\data\\SLINKY INTRO.wmv")
-        clip.preview()
+    # if PlayIntro:
+    #     clip = VideoFileClip(main_dir + "\\data\\SLINKY INTRO.wmv")
+    #     clip.preview()
     
     # create the background, tile the bgd image
     bgdtile = utils.load_image(ImgName_bg)
@@ -566,7 +565,7 @@ def main(winstyle=0):
 
     # load the sound effects
     if pg.mixer:
-        music_file = os.path.join(main_dir, "data", "music\\" + MusicName_bg)
+        music_file = os.path.join(main_dir, "data",  MusicName_bg)
         pg.mixer.music.load(music_file)
         pg.mixer.music.play(-1)
     sfx_player = [utils.load_sound("slinky_back.wav"), utils.load_sound("slinky_land.wav")]
@@ -604,8 +603,8 @@ def main(winstyle=0):
         long_background.rect = long_background.image.get_rect()
         flag = True
         player = Player()
-        timer = Timer()
-        timer.player = player
+        # timer = Timer()
+        # timer.player = player
         player.sfx = sfx_player
         for i in range(len(Names_Platform)):
             Instances_platform.append(Platform()) 
@@ -684,11 +683,11 @@ def main(winstyle=0):
             all.update()
 
             # draw the scene
-            if not GameReady[0] and not GameOver[0] and not GameWin[0]:
-                timer.timerUpdate()
+            # if not GameReady[0] and not GameOver[0] and not GameWin[0]:
+            #     timer.timerUpdate()
             screen.blit(background, (0,0))
             dirty = all.draw(screen)  # can't be deleted!
-            timer.timerDisplay()
+            # timer.timerDisplay()
             # pg.display.update(dirty)
             pg.display.update()
             
